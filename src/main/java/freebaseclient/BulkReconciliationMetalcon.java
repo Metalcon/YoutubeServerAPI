@@ -38,10 +38,8 @@ public class BulkReconciliationMetalcon {
 			// GenericUrl url = new
 			// GenericUrl("https://www.googleapis.com/freebase/v1/reconcile");
 
-
 			File outputFile = new File("Band_Freebase_matched.csv");
 
-			
 			ArrayList<String> bandListArray = new ArrayList<String>();
 			String line;
 			try {
@@ -58,6 +56,12 @@ public class BulkReconciliationMetalcon {
 
 			JSONArray requestBody = new JSONArray();
 
+			// Freebase queries have a limit concerning the number of requested
+			// entries per query so we have to divide large lists to severeal
+			// requests.
+			// TODO: implement request splitting
+
+			// TODO: refactor request builder to a function
 			for (int i = 0; i < bandListArray.size(); i++) {
 
 				String bandDataColumn = bandListArray.get(i);
@@ -68,7 +72,6 @@ public class BulkReconciliationMetalcon {
 				// prepare request metadata
 				requestBodyContent.put("jsonrpc", "2.0");
 
-				// TODO: find out what to put here
 				requestBodyContent.put("id", i);
 				requestBodyContent.put("method", "freebase.reconcile");
 				requestBodyContent.put("apiVersion", "v1");
@@ -105,7 +108,6 @@ public class BulkReconciliationMetalcon {
 					ByteArrayContent.fromString("application/json",
 							requestBodyString));
 
-			// TODO: parse response (JSONArray to String)
 			HttpResponse httpResponse = request.execute();
 
 			JSONArray response = new JSONArray();
@@ -119,7 +121,7 @@ public class BulkReconciliationMetalcon {
 			FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
 			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 			String outputString = "";
-			
+
 			for (int j = 0; j < response.size(); j++) {
 				JSONObject responseEntry = (JSONObject) jsonparser
 						.parse(response.get(j).toString());
@@ -128,24 +130,26 @@ public class BulkReconciliationMetalcon {
 				JSONArray responseEntryResultCandidates = (JSONArray) responseEntryResult
 						.get("candidate");
 
-				/* a single entry can have multiple candidates
-				 * It seems like the candidates are sorted by their confidence score
-				 * TODO: look up whether this is reliable
-				 *  
+				/*
+				 * a single entry can have multiple candidates It seems like the
+				 * candidates are sorted by their confidence score TODO: look up
+				 * whether this is reliable
 				 */
 				for (Object candidate : responseEntryResultCandidates) {
-					outputString += (bandListArray.get(j) + "\t" + JsonPath.read(candidate, "$.mid")
-							.toString()
+					outputString += (bandListArray.get(j)
 							+ "\t"
-							+ JsonPath.read(candidate, "$.confidence").toString()
-							+  "\n");
-					
-					
-					//remove this break if you want to get more than one result!
+							+ JsonPath.read(candidate, "$.mid").toString()
+							+ "\t"
+							+ JsonPath.read(candidate, "$.confidence")
+									.toString() + "\n");
+
+					// remove this break if you want to get more than one
+					// result!
 					break;
 				}
 
-			}				System.out.println(outputString);
+			}
+			System.out.println(outputString);
 			bufferedWriter.write(outputString);
 			bufferedWriter.close();
 
