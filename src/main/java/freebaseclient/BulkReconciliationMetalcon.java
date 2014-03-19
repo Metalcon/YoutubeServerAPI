@@ -1,8 +1,11 @@
 package freebaseclient;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
@@ -35,8 +38,10 @@ public class BulkReconciliationMetalcon {
 			// GenericUrl url = new
 			// GenericUrl("https://www.googleapis.com/freebase/v1/reconcile");
 
-			// String[] bandList =
-			// {"Metallica","Megadeth","Slayer","Anthrax","Deathstars","in legend","lustkind"};
+
+			File outputFile = new File("Band_Freebase_matched.csv");
+
+			
 			ArrayList<String> bandListArray = new ArrayList<String>();
 			String line;
 			try {
@@ -107,8 +112,14 @@ public class BulkReconciliationMetalcon {
 			JSONParser jsonparser = new JSONParser();
 			response = (JSONArray) jsonparser.parse(httpResponse
 					.parseAsString());
-			System.out.println("Response -->" + response);
 
+			if (!outputFile.exists()) {
+				outputFile.createNewFile();
+			}
+			FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
+			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+			String outputString = "";
+			
 			for (int j = 0; j < response.size(); j++) {
 				JSONObject responseEntry = (JSONObject) jsonparser
 						.parse(response.get(j).toString());
@@ -123,16 +134,20 @@ public class BulkReconciliationMetalcon {
 				 *  
 				 */
 				for (Object candidate : responseEntryResultCandidates) {
-					System.out.print(bandListArray.get(j) + "\t" + JsonPath.read(candidate, "$.mid")
+					outputString += (bandListArray.get(j) + "\t" + JsonPath.read(candidate, "$.mid")
 							.toString()
-							+ " \t "
+							+ "\t"
 							+ JsonPath.read(candidate, "$.confidence").toString()
 							+  "\n");
+					
 					
 					//remove this break if you want to get more than one result!
 					break;
 				}
-			}
+
+			}				System.out.println(outputString);
+			bufferedWriter.write(outputString);
+			bufferedWriter.close();
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
