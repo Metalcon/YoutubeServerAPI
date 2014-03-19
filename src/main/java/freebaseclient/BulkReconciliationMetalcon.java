@@ -96,9 +96,6 @@ public class BulkReconciliationMetalcon {
 			String requestBodyString = requestBody.toString();
 			System.out.println(requestBodyString);
 
-			// String requestBody =
-			// "[{\"jsonrpc\" : \"2.0\",\"id\" : \"<request-id>\",\"method\" : \"freebase.reconcile\",\"apiVersion\" : \"v1\",\"params\" : {\"name\" : \"Prometheus\",\"kind\" : [ \"/film/film\" ],\"prop\" : [ \"/film/film/directed_by:Ridley+Scott\" ],\"key\" : \""
-			// + properties.get("API_KEY") + "\"}}]";
 			HttpRequest request = requestFactory.buildPostRequest(url,
 					ByteArrayContent.fromString("application/json",
 							requestBodyString));
@@ -106,8 +103,6 @@ public class BulkReconciliationMetalcon {
 			// TODO: parse response (JSONArray to String)
 			HttpResponse httpResponse = request.execute();
 
-			// JSONArray response =
-			// (JSONArray)parser.parse(httpResponse.parseAsString());
 			JSONArray response = new JSONArray();
 			JSONParser jsonparser = new JSONParser();
 			response = (JSONArray) jsonparser.parse(httpResponse
@@ -117,15 +112,10 @@ public class BulkReconciliationMetalcon {
 			for (int j = 0; j < response.size(); j++) {
 				JSONObject responseEntry = (JSONObject) jsonparser
 						.parse(response.get(j).toString());
-//				System.out.println("ResponseEntry -->" + responseEntry);
 				JSONObject responseEntryResult = (JSONObject) responseEntry
 						.get("result");
-//				System.out.println("responseEntryResult -->"
-//						+ responseEntryResult);
 				JSONArray responseEntryResultCandidates = (JSONArray) responseEntryResult
 						.get("candidate");
-//				System.out.println("responseEntryResultCandidates -->"
-//						+ responseEntryResultCandidates);
 
 				/* a single entry can have multiple candidates
 				 * It seems like the candidates are sorted by their confidence score
@@ -133,14 +123,14 @@ public class BulkReconciliationMetalcon {
 				 *  
 				 */
 				for (Object candidate : responseEntryResultCandidates) {
-					System.out.print(JsonPath.read(candidate, "$.mid")
+					System.out.print(bandListArray.get(j) + "\t" + JsonPath.read(candidate, "$.mid")
 							.toString()
-							+ " | "
-							+ JsonPath.read(candidate, "$.name").toString()
-							+ " | "
-							+  " (");
-					System.out.println(JsonPath.read(candidate, "$.confidence")
-							.toString() + ")");
+							+ " \t "
+							+ JsonPath.read(candidate, "$.confidence").toString()
+							+  "\n");
+					
+					//remove this break if you want to get more than one result!
+					break;
 				}
 			}
 
