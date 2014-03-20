@@ -79,7 +79,7 @@ public class BulkReconciliationMetalcon {
 	}
 
 	// Freebase queries have a limit concerning the number of requested
-	// entries per query so we have to divide large lists to severeal
+	// entries per query so we have to divide large lists to several
 	// requests.
 	// TODO: implement request splitting
 
@@ -99,7 +99,7 @@ public class BulkReconciliationMetalcon {
 		return bandListArray;
 	}
 
-	public static HttpRequest BuildRequest(List<String> bandListArray)
+	public static HttpRequest BuildRequest(List<String> requestArrayList)
 			throws IOException {
 
 		GenericUrl url = new GenericUrl("https://www.googleapis.com/rpc");
@@ -108,9 +108,9 @@ public class BulkReconciliationMetalcon {
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
 
-		for (int i = 0; i < bandListArray.size(); i++) {
+		for (int i = 0; i < requestArrayList.size(); i++) {
 
-			String bandDataColumn = bandListArray.get(i);
+			String bandDataColumn = requestArrayList.get(i);
 			String[] bandDataSplitArray = bandDataColumn.split("\t");
 			System.out.println(bandDataSplitArray[1]);
 
@@ -147,7 +147,6 @@ public class BulkReconciliationMetalcon {
 			requestBody.add(requestBodyContent);
 		}
 		String requestBodyString = requestBody.toString();
-		//System.out.println(requestBodyString);
 
 		HttpRequest request = requestFactory.buildPostRequest(url,
 				ByteArrayContent.fromString("application/json",
