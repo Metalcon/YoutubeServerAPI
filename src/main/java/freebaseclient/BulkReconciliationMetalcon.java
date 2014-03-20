@@ -29,6 +29,7 @@ public class BulkReconciliationMetalcon {
 	//TODO: find a good value for maximum number of requests per query
 	private static final int maximalQueryLength = 100;
 	public static Properties properties = new Properties();
+	public static String outputString = null;
 
 	public static void main(String[] args) throws IOException, ParseException {
 		
@@ -46,7 +47,7 @@ public class BulkReconciliationMetalcon {
 			// GenericUrl url = new
 			// GenericUrl("https://www.googleapis.com/freebase/v1/reconcile");
 
-			File outputFile = new File("Band_Freebase_matched.csv");
+			
 
 			ArrayList<String> bandListArray = new ArrayList<String>();
 			String line;
@@ -82,7 +83,8 @@ public class BulkReconciliationMetalcon {
 			else{
 			
 			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
-			parseResponse (httpResponse , outputFile , bandListArray);
+			outputString = parseResponse (httpResponse , bandListArray);
+			writeToFile(outputString);
 	}
 			}
 
@@ -150,19 +152,16 @@ public class BulkReconciliationMetalcon {
 			
 			
 			
-			public static void parseResponse(HttpResponse httpResponse , File outputFile , ArrayList bandListArray) throws ParseException, IOException{
+			public static String parseResponse(HttpResponse httpResponse , ArrayList bandListArray) throws ParseException, IOException{
 
 			JSONArray response = new JSONArray();
 			JSONParser jsonparser = new JSONParser();
 			response = (JSONArray) jsonparser.parse(httpResponse
 					.parseAsString());
 
-			if (!outputFile.exists()) {
-				outputFile.createNewFile();
-			}
-			FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
-			BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-			String outputString = "";
+
+
+			String responseString = "";
 
 			for (int j = 0; j < response.size(); j++) {
 				JSONObject responseEntry = (JSONObject) jsonparser
@@ -178,7 +177,7 @@ public class BulkReconciliationMetalcon {
 				 * whether this is reliable
 				 */
 				for (Object candidate : responseEntryResultCandidates) {
-					outputString += (bandListArray.get(j)
+					responseString += (bandListArray.get(j)
 							+ "\t"
 							+ JsonPath.read(candidate, "$.mid").toString()
 							+ "\t"
@@ -191,9 +190,20 @@ public class BulkReconciliationMetalcon {
 				}
 
 			}
-			System.out.println(outputString);
-			bufferedWriter.write(outputString);
-			bufferedWriter.close();
+			System.out.println(responseString);
+			return(responseString);
+
 
 		} 
+			
+			public static void writeToFile(String dataToSave) throws IOException{
+				File outputFile = new File("Band_Freebase_matched.csv");
+				if (!outputFile.exists()) {
+					outputFile.createNewFile();
+				}
+				FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
+				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+				bufferedWriter.write(dataToSave);
+				bufferedWriter.close();
+			}
 	}
