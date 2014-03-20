@@ -47,10 +47,13 @@ public class BulkReconciliationMetalcon {
 			System.out.println("Problem reading properties!");
 			e1.printStackTrace();
 		}
-
 		JSONParser parser = new JSONParser();
 		List<String> bandListArray = readInputFile();
+		reconcileList(bandListArray);
+		writeToFile(outputString);
+	}
 
+	private static void reconcileList(List<String> bandListArray) throws IOException, ParseException {
 		if (bandListArray.size() > maximalQueryLength) {
 			for (int i = 0; i < bandListArray.size(); i += maximalQueryLength - 1) {
 				if (i + maximalQueryLength - 1 < bandListArray.size()) {
@@ -72,7 +75,7 @@ public class BulkReconciliationMetalcon {
 			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
 			outputString = parseResponse(httpResponse, bandListArray);
 		}
-		writeToFile(outputString);
+		
 	}
 
 	// Freebase queries have a limit concerning the number of requested
