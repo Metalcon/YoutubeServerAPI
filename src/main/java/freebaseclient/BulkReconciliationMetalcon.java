@@ -83,7 +83,7 @@ public class BulkReconciliationMetalcon {
 			else{
 			
 			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
-			outputString = parseResponse (httpResponse , bandListArray);
+			outputString += parseResponse (httpResponse , bandListArray);
 			writeToFile(outputString);
 	}
 			}
