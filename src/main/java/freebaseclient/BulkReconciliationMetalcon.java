@@ -26,10 +26,16 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.jayway.jsonpath.JsonPath;
 
+/**
+ * This is an experimental implementation of bulk reconciliation for our metalcon database.
+ * It extracts band names and asks Freebase for MIDs which are then written to a new file.
+ * 
+ * @author Christian Schowalter
+ */
 public class BulkReconciliationMetalcon {
 
 	// TODO: find a good value for maximum number of requests per query
-	private static final int maximalQueryLength = 10;
+	private static final int maximalQueryLength = 100;
 	public static Properties properties = new Properties();
 	public static String outputString = null;
 
@@ -65,24 +71,14 @@ public class BulkReconciliationMetalcon {
 				if (i + maximalQueryLength - 1 < bandListArray.size()) {
 					List<String> bandListPart = bandListArray.subList(i, i
 							+ maximalQueryLength - 1);
-					//System.out.println("about to send request number" + i
-					//		+ " to " + (i + maximalQueryLength - 1));
 					HttpResponse httpResponse = BuildRequest(bandListPart)
 							.execute();
-					//System.out.println("request sent. About to parse response");
-					// System.out.println("response to parse --> " +
-					// httpResponse.parseAsString());
 					outputString += parseResponse(httpResponse, bandListPart);
 				} else {
 					List<String> bandListPart = bandListArray.subList(i,
 							bandListArray.size());
-					//System.out.println("about to send request number" + i
-					//		+ " to " + (bandListArray.size()));
 					HttpResponse httpResponse = BuildRequest(bandListPart)
 							.execute();
-					//System.out.println("request sent. About to parse response");
-					// System.out.println("response to parse --> " +
-					// httpResponse.parseAsString());
 					outputString += parseResponse(httpResponse, bandListPart);
 				}
 
