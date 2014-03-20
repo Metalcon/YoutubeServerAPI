@@ -49,22 +49,7 @@ public class BulkReconciliationMetalcon {
 		}
 
 		JSONParser parser = new JSONParser();
-
-		// GenericUrl url = new
-		// GenericUrl("https://www.googleapis.com/freebase/v1/reconcile");
-
-		List<String> bandListArray = new ArrayList<String>();
-		String line;
-		try {
-			FileReader fileReader = new FileReader("Band.csv");
-			BufferedReader bufferedReader = new BufferedReader(fileReader);
-			for (int i = 0; (line = bufferedReader.readLine()) != null; ++i) {
-				bandListArray.add(line);
-			}
-		} catch (IOException e) {
-			System.err.println("Problem reading Bandlist!");
-			e.printStackTrace();
-		}
+		List<String> bandListArray = readInputFile();
 
 		if (bandListArray.size() > maximalQueryLength) {
 			for (int i = 0; i < bandListArray.size(); i += maximalQueryLength - 1) {
@@ -94,6 +79,22 @@ public class BulkReconciliationMetalcon {
 	// entries per query so we have to divide large lists to severeal
 	// requests.
 	// TODO: implement request splitting
+
+	private static List<String> readInputFile() {
+		String line;
+		List<String> bandListArray = new ArrayList<String>();
+		try {
+			FileReader fileReader = new FileReader("Band.csv");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			for (int i = 0; (line = bufferedReader.readLine()) != null; ++i) {
+				bandListArray.add(line);
+			}
+		} catch (IOException e) {
+			System.err.println("Problem reading Bandlist!");
+			e.printStackTrace();
+		}
+		return bandListArray;
+	}
 
 	public static HttpRequest BuildRequest(List<String> bandListArray)
 			throws IOException {
