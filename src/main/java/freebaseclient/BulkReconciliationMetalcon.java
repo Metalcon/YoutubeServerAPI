@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,6 +26,8 @@ import com.jayway.jsonpath.JsonPath;
 
 public class BulkReconciliationMetalcon {
 
+	//TODO: find a good value for maximum number of requests per query
+	private static final int maximalQueryLength = 100;
 	public static Properties properties = new Properties();
 
 	public static void main(String[] args) throws IOException, ParseException {
@@ -62,17 +63,34 @@ public class BulkReconciliationMetalcon {
 				e.printStackTrace();
 			}
 			
+			if (bandListArray.size() > maximalQueryLength){
+				//TODO: implement partitioned request
+				ArrayList<ArrayList> partitionedListsContainer = new ArrayList<ArrayList>();
+				for (int i = 0; i < bandListArray.size(); i+=maximalQueryLength) {
+					
+					if (i+maximalQueryLength-1 < bandListArray.size()){
+					ArrayList<String> bandListPart = (ArrayList<String>) bandListArray.subList(i, i+maximalQueryLength-1);
+					HttpResponse httpResponse = BuildRequest(bandListPart).execute();
+					//TODO: parse and save response
+				} else {
+					ArrayList<String> bandListPart = (ArrayList<String>) bandListArray.subList(i, bandListArray.size()-1);
+					HttpResponse httpResponse = BuildRequest(bandListPart).execute();
+					//TODO: parse and save response
+				}
+				
+			}}
+			else{
+			
 			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
 			parseResponse (httpResponse , outputFile , bandListArray);
 	}
+			}
 
 			// Freebase queries have a limit concerning the number of requested
 			// entries per query so we have to divide large lists to severeal
 			// requests.
 			// TODO: implement request splitting
 
-			// TODO: refactor request builder to a function
-			
 			public static HttpRequest BuildRequest(ArrayList<String> bandListArray) throws IOException{
 				
 				GenericUrl url = new GenericUrl("https://www.googleapis.com/rpc");
