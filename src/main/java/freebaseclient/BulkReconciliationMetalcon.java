@@ -72,11 +72,11 @@ public class BulkReconciliationMetalcon {
 					if (i+maximalQueryLength-1 < bandListArray.size()){
 					ArrayList<String> bandListPart = (ArrayList<String>) bandListArray.subList(i, i+maximalQueryLength-1);
 					HttpResponse httpResponse = BuildRequest(bandListPart).execute();
-					//TODO: parse and save response
+					outputString += parseResponse (httpResponse , bandListPart);
 				} else {
 					ArrayList<String> bandListPart = (ArrayList<String>) bandListArray.subList(i, bandListArray.size()-1);
 					HttpResponse httpResponse = BuildRequest(bandListPart).execute();
-					//TODO: parse and save response
+					outputString += parseResponse (httpResponse , bandListPart);
 				}
 				
 			}}
@@ -84,8 +84,9 @@ public class BulkReconciliationMetalcon {
 			
 			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
 			outputString = parseResponse (httpResponse , bandListArray);
-			writeToFile(outputString);
+			
 	}
+			writeToFile(outputString);
 			}
 
 			// Freebase queries have a limit concerning the number of requested
