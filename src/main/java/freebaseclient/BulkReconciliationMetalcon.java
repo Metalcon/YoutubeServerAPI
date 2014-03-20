@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.util.Properties;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.GenericUrl;
@@ -27,14 +29,19 @@ public class BulkReconciliationMetalcon {
 
 	public static Properties properties = new Properties();
 
-	public static void main(String[] args) {
-		try {
-			properties.load(new FileInputStream("freebase.properties"));
-			HttpTransport httpTransport = new NetHttpTransport();
-			HttpRequestFactory requestFactory = httpTransport
-					.createRequestFactory();
+	public static void main(String[] args) throws IOException, ParseException {
+		
+		
+
+			try {
+				properties.load(new FileInputStream("freebase.properties"));
+			} catch (IOException e1) {
+				System.out.println("Problem reading properties!");
+				e1.printStackTrace();
+			}
+
 			JSONParser parser = new JSONParser();
-			GenericUrl url = new GenericUrl("https://www.googleapis.com/rpc");
+			
 			// GenericUrl url = new
 			// GenericUrl("https://www.googleapis.com/freebase/v1/reconcile");
 
@@ -52,9 +59,12 @@ public class BulkReconciliationMetalcon {
 				}
 			} catch (IOException e) {
 				System.out.println("Problem reading Bandlist!");
+				e.printStackTrace();
 			}
-
-			JSONArray requestBody = new JSONArray();
+			
+			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
+			parseResponse (httpResponse , outputFile , bandListArray);
+	}
 
 			// Freebase queries have a limit concerning the number of requested
 			// entries per query so we have to divide large lists to severeal
@@ -62,6 +72,15 @@ public class BulkReconciliationMetalcon {
 			// TODO: implement request splitting
 
 			// TODO: refactor request builder to a function
+			
+			public static HttpRequest BuildRequest(ArrayList<String> bandListArray) throws IOException{
+				
+				GenericUrl url = new GenericUrl("https://www.googleapis.com/rpc");
+				JSONArray requestBody = new JSONArray();
+				HttpTransport httpTransport = new NetHttpTransport();
+				HttpRequestFactory requestFactory = httpTransport
+						.createRequestFactory();
+				
 			for (int i = 0; i < bandListArray.size(); i++) {
 
 				String bandDataColumn = bandListArray.get(i);
@@ -108,7 +127,12 @@ public class BulkReconciliationMetalcon {
 					ByteArrayContent.fromString("application/json",
 							requestBodyString));
 
-			HttpResponse httpResponse = request.execute();
+			return request;
+			}
+			
+			
+			
+			public static void parseResponse(HttpResponse httpResponse , File outputFile , ArrayList bandListArray) throws ParseException, IOException{
 
 			JSONArray response = new JSONArray();
 			JSONParser jsonparser = new JSONParser();
@@ -153,8 +177,5 @@ public class BulkReconciliationMetalcon {
 			bufferedWriter.write(outputString);
 			bufferedWriter.close();
 
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		} 
 	}
-}
