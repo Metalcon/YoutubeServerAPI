@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -46,11 +47,10 @@ public class BulkAlbumSearch {
 		List<String> bandListArray = readInputFile();
 		findAlbums(bandListArray);
 		
-		//TODO:
 		//writeToFile(outputString);
 	}
 	
-	private static void findAlbums(List<String> bandListArray) throws IOException {
+	private static void findAlbums(List<String> bandListArray) throws IOException, ParseException {
 		if (bandListArray.size() > maximalQueryLength) {
 			for (int i = 0; i < bandListArray.size(); i += maximalQueryLength - 1) {
 				if (i + maximalQueryLength - 1 < bandListArray.size()) {
@@ -75,8 +75,21 @@ public class BulkAlbumSearch {
 	}
 
 	private static String parseResponse(HttpResponse httpResponse,
-			List<String> bandListPart) {
-		// TODO Auto-generated method stub
+			List<String> bandListPart) throws ParseException, IOException {
+		JSONArray response = new JSONArray();
+		JSONParser jsonparser = new JSONParser();
+		try {
+			response = (JSONArray) jsonparser.parse(httpResponse
+					.parseAsString());
+			System.out.println(response.toString());
+		} catch (ClassCastException ce) {
+			System.err
+					.println("Typecast failed. Response is probably broken. Can be caused by bad request");
+		}
+		String responseString = "";
+		
+		
+		
 		return null;
 	}
 
@@ -88,11 +101,35 @@ public class BulkAlbumSearch {
 				.createRequestFactory();
 
 		for (int i = 0; i < requestArrayList.size(); i++) {
-			//TODO: implement request JSON
+			String bandDataColumn = requestArrayList.get(i);
+			String[] bandDataSplitArray = bandDataColumn.split("\t");
+			System.out.println(bandDataSplitArray[2]);
+			if (bandDataSplitArray[2].equals("NO_MID_FOUND")){break;}
+			JSONObject requestBodyContent = new JSONObject();
+			// prepare request metadata
+			requestBodyContent.put("jsonrpc", "2.0");
+
+			requestBodyContent.put("id", i);
+			requestBodyContent.put("method", "freebase.reconcile");
+			requestBodyContent.put("apiVersion", "v1");
+
+			JSONObject exampleRequestContent = new JSONObject();
+			exampleRequestContent.put("mid", bandDataSplitArray[2]);
+			
+			JSONArray exampleRequestContentKind = new JSONArray();
+			//exampleRequestContentKind.add(null);
+			exampleRequestContent.put("/music/artist/album", exampleRequestContentKind);
+			
+			// API-Key is needed for every single concept... wtf?!
+			exampleRequestContent.put("key", properties.get("API_KEY"));
+
+			requestBodyContent.put("params", exampleRequestContent);
+
+			requestBody.add(requestBodyContent);
 			
 		}
 		String requestBodyString = requestBody.toString();
-		//System.out.println(requestBodyString);
+		System.out.println(requestBodyString);
 
 		HttpRequest request = requestFactory.buildPostRequest(url,
 				ByteArrayContent.fromString("application/json",
