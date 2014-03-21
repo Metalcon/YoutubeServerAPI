@@ -50,28 +50,28 @@ public class BulkAlbumSearch {
 		//writeToFile(outputString);
 	}
 	
-	private static void findAlbums(List<String> bandListArray) {
-//		if (bandListArray.size() > maximalQueryLength) {
-//			for (int i = 0; i < bandListArray.size(); i += maximalQueryLength - 1) {
-//				if (i + maximalQueryLength - 1 < bandListArray.size()) {
-//					List<String> bandListPart = bandListArray.subList(i, i
-//							+ maximalQueryLength - 1);
-//					HttpResponse httpResponse = BuildRequest(bandListPart)
-//							.execute();
-//					outputString += parseResponse(httpResponse, bandListPart);
-//				} else {
-//					List<String> bandListPart = bandListArray.subList(i,
-//							bandListArray.size());
-//					HttpResponse httpResponse = BuildRequest(bandListPart)
-//							.execute();
-//					outputString += parseResponse(httpResponse, bandListPart);
-//				}
-//
-//			}
-//		} else {
-//			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
-//			outputString = parseResponse(httpResponse, bandListArray);
-//		}
+	private static void findAlbums(List<String> bandListArray) throws IOException {
+		if (bandListArray.size() > maximalQueryLength) {
+			for (int i = 0; i < bandListArray.size(); i += maximalQueryLength - 1) {
+				if (i + maximalQueryLength - 1 < bandListArray.size()) {
+					List<String> bandListPart = bandListArray.subList(i, i
+							+ maximalQueryLength - 1);
+					HttpResponse httpResponse = BuildRequest(bandListPart)
+							.execute();
+					outputString += parseResponse(httpResponse, bandListPart);
+				} else {
+					List<String> bandListPart = bandListArray.subList(i,
+							bandListArray.size());
+					HttpResponse httpResponse = BuildRequest(bandListPart)
+							.execute();
+					outputString += parseResponse(httpResponse, bandListPart);
+				}
+
+			}
+		} else {
+			HttpResponse httpResponse = BuildRequest(bandListArray).execute();
+			outputString = parseResponse(httpResponse, bandListArray);
+		}
 	}
 
 	private static String parseResponse(HttpResponse httpResponse,
@@ -80,7 +80,7 @@ public class BulkAlbumSearch {
 		return null;
 	}
 
-	private static Object BuildRequest(List<String> requestArrayList) throws IOException {
+	private static HttpRequest BuildRequest(List<String> requestArrayList) throws IOException {
 		GenericUrl url = new GenericUrl("https://www.googleapis.com/rpc");
 		JSONArray requestBody = new JSONArray();
 		HttpTransport httpTransport = new NetHttpTransport();
