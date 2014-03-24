@@ -78,9 +78,10 @@ public class BulkAlbumSearch {
 			List<String> bandListPart) throws ParseException, IOException {
 		JSONArray response = new JSONArray();
 		JSONParser jsonparser = new JSONParser();
-		try {
-			response = (JSONArray) jsonparser.parse(httpResponse
+		try {System.out.println(httpResponse
 					.parseAsString());
+//			response = (JSONArray) jsonparser.parse(httpResponse
+//					.parseAsString());
 			System.out.println(response.toString());
 		} catch (ClassCastException ce) {
 			System.err
@@ -104,7 +105,7 @@ public class BulkAlbumSearch {
 			String bandDataColumn = requestArrayList.get(i);
 			String[] bandDataSplitArray = bandDataColumn.split("\t");
 			System.out.println(bandDataSplitArray[2]);
-			if (bandDataSplitArray[2].equals("NO_MID_FOUND")){break;}
+			if (!(bandDataSplitArray[2].equals("NO_MID_FOUND"))){
 			JSONObject requestBodyContent = new JSONObject();
 			// prepare request metadata
 			requestBodyContent.put("jsonrpc", "2.0");
@@ -115,17 +116,23 @@ public class BulkAlbumSearch {
 
 			JSONObject exampleRequestContent = new JSONObject();
 			exampleRequestContent.put("mid", bandDataSplitArray[2]);
+			exampleRequestContent.put("type", "/music/artist");
+			
+			JSONObject exampleRequestContentKindEntry = new JSONObject();
+			exampleRequestContentKindEntry.put("name",null);
+			exampleRequestContentKindEntry.put("mid",null);
 			
 			JSONArray exampleRequestContentKind = new JSONArray();
-			//exampleRequestContentKind.add(null);
-			exampleRequestContent.put("/music/artist/album", exampleRequestContentKind);
+			exampleRequestContentKind.add(exampleRequestContentKindEntry);
+			
+			exampleRequestContent.put("album", exampleRequestContentKind);
 			
 			// API-Key is needed for every single concept... wtf?!
 			exampleRequestContent.put("key", properties.get("API_KEY"));
 
 			requestBodyContent.put("params", exampleRequestContent);
 
-			requestBody.add(requestBodyContent);
+			requestBody.add(requestBodyContent);}
 			
 		}
 		String requestBodyString = requestBody.toString();
