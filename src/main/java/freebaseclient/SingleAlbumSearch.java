@@ -27,7 +27,7 @@ public class SingleAlbumSearch {
 //	      url.put("kind", "/music/artist/album");
 //	      url.put("que", "");
 	      //TODO: implement reading mid from file
-	      String query = "[{\"mid\":\"/m/02g_zp\",\"/music/artist/album\":[]}]";
+	      String query = "[{\"mid\":\"/m/02g_zp\",\"/music/artist/album\":[{\"name\":null , \"mid\":null}]}]";
 	      url.put("query", query);
 
 	      System.out.println("my API-Key: " + properties.get("API_KEY"));
