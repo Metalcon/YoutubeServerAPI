@@ -28,10 +28,5 @@
 			<artifactId>google-http-client</artifactId>
 			<version>1.17.0-rc</version>
 		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>16.0.1</version>
-		</dependency>
 	</dependencies>
 </project>

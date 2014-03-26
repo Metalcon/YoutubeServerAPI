@@ -25,11 +25,10 @@ public class facebookRssFeedFinder {
 
 	public static void main(String[] args) throws IOException, ParseException {
 
-		String bandMid = "/m/02g_zp";
+		String bandMid = "/m/014_xj";
 		List<GenericUrl> socialMediaUrls = new ArrayList<GenericUrl>();
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
-
-	//	getFacebookRssUrl(bandName);
+		getFacebookRssUrl(socialMediaUrls);
 
 	}
 
@@ -61,20 +60,38 @@ public class facebookRssFeedFinder {
 		return resultList;
 	}
 
-	private static GenericUrl getFacebookRssUrl(String bandName)
+	private static GenericUrl getFacebookRssUrl(List<GenericUrl> socialMediaUrls)
 			throws IOException, ParseException {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
+		
+		List<GenericUrl> filteredList = new ArrayList<GenericUrl>();
+		
+		for (int i = 0; i < socialMediaUrls.size(); i++) {
+			if (socialMediaUrls.get(i).toString().contains("facebook")){
+				filteredList.add(socialMediaUrls.get(i));
+				
+			}
+		}
+		
+		System.out.println(filteredList.get(0));
+		
+		String bandName = filteredList.get(0).toString().split("facebook.com/")[1];
+		System.out.println(bandName);
 		// FIXME: adapt to new implementation (get bandName from facebook-url)
 		GenericUrl graphUrl = new GenericUrl("https://graph.facebook.com/"
 				+ bandName);
+		System.out.println(graphUrl);
 		HttpRequest request = requestFactory.buildGetRequest(graphUrl);
 		HttpResponse httpResponse = request.execute();
 		String feedId = parseFacebookResponse(httpResponse);
 		GenericUrl RssFeedUrl = new GenericUrl(
 				"https://www.facebook.com/feeds/page.php?id=" + feedId
 						+ "&format=rss20");
+		
+		System.out.println(RssFeedUrl);
+		
 		return RssFeedUrl;
 	}
 
