@@ -1,7 +1,11 @@
 package freebaseclient;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -14,31 +18,75 @@ import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.jayway.jsonpath.JsonPath;
 
 public class facebookRssFeedFinder {
+	public static Properties properties = new Properties();
 
-	public static void main(String[] args) throws IOException, ParseException{
-    HttpTransport httpTransport = new NetHttpTransport();
-    HttpRequestFactory requestFactory = httpTransport.createRequestFactory();
-    //TODO: implement reading name from file.
-    String bandName = "IronMaiden";
-    GenericUrl graphUrl = new GenericUrl("https://graph.facebook.com/" + bandName);
-    HttpRequest request = requestFactory.buildGetRequest(graphUrl);
-    HttpResponse httpResponse = request.execute();
-    String feedId = parseResponse(httpResponse);
-    GenericUrl RssFeedUrl = new GenericUrl("https://www.facebook.com/feeds/page.php?id=" + feedId + "&format=rss20");
-    //TODO: maybe write url to file?
-    System.out.println(RssFeedUrl);
-}
-	
-	private static String parseResponse(HttpResponse httpResponse) throws ParseException, IOException {
+	public static void main(String[] args) throws IOException, ParseException {
+
+		String bandMid = "/m/02g_zp";
+		List<GenericUrl> socialMediaUrls = new ArrayList<GenericUrl>();
+		socialMediaUrls = getBandSocialMediaPresence(bandMid);
+
+	//	getFacebookRssUrl(bandName);
+
+	}
+
+	private static List<GenericUrl> getBandSocialMediaPresence(String bandMid)
+			throws FileNotFoundException, IOException, ParseException {
+		properties.load(new FileInputStream("freebase.properties"));
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/freebase/v1/topic" + bandMid + "?filter=/common/topic/social_media_presence");
+	//	url.put("key", properties.get("API_KEY"));
+	//	System.out.println(url);
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONObject responseProperty = (JSONObject) response.get("property");
+		JSONObject responsePropertyValues = (JSONObject) responseProperty.get("/common/topic/social_media_presence");
+		JSONArray pages = (JSONArray) responsePropertyValues.get("values");
+		
+		List<GenericUrl> resultList = new ArrayList<GenericUrl>();
+		for (Object page : pages) {
+			GenericUrl pageUrl = new GenericUrl(JsonPath.read(page, "$.value").toString());
+			resultList.add(pageUrl);
+		}
+		
+		return resultList;
+	}
+
+	private static GenericUrl getFacebookRssUrl(String bandName)
+			throws IOException, ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		// FIXME: adapt to new implementation (get bandName from facebook-url)
+		GenericUrl graphUrl = new GenericUrl("https://graph.facebook.com/"
+				+ bandName);
+		HttpRequest request = requestFactory.buildGetRequest(graphUrl);
+		HttpResponse httpResponse = request.execute();
+		String feedId = parseFacebookResponse(httpResponse);
+		GenericUrl RssFeedUrl = new GenericUrl(
+				"https://www.facebook.com/feeds/page.php?id=" + feedId
+						+ "&format=rss20");
+		return RssFeedUrl;
+	}
+
+	private static String parseFacebookResponse(HttpResponse httpResponse)
+			throws ParseException, IOException {
 		JSONObject response = new JSONObject();
 		JSONParser jsonparser = new JSONParser();
 		String responseId = null;
-		try {response = (JSONObject) jsonparser.parse(httpResponse
+		try {
+			response = (JSONObject) jsonparser.parse(httpResponse
 					.parseAsString());
-		responseId = response
-				.get("id").toString();
+			responseId = response.get("id").toString();
 		} catch (ClassCastException ce) {
 			System.err
 					.println("Typecast failed. Response is probably broken. Can be caused by bad request");
