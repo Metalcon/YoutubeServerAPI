@@ -30,8 +30,60 @@ public class facebookRssFeedFinder {
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
 		getFacebookRssUrl(socialMediaUrls);
 		getTwitterTimelineRss(socialMediaUrls);
+		getLastfmEvents(socialMediaUrls);
 
 	}
+
+	private static List<GenericUrl> getLastfmEvents(List<GenericUrl> socialMediaUrls) throws FileNotFoundException, IOException, ParseException {
+properties.load(new FileInputStream("lastfm.properties"));
+		
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl("http://ws.audioscrobbler.com/2.0/");
+		
+		List<GenericUrl> filteredList = new ArrayList<GenericUrl>();
+		
+		for (int i = 0; i < socialMediaUrls.size(); i++) {
+			if (socialMediaUrls.get(i).toString().contains("http://www.last.fm/music/")){
+				filteredList.add(socialMediaUrls.get(i));
+			}
+		}
+		
+		if (filteredList.size() > 0){
+		System.out.println(filteredList.get(0));
+		String bandName = filteredList.get(0).toString().split("http://www.last.fm/music/")[1];
+		//http://ws.audioscrobbler.com/2.0/?method=artist.getevents&artist=Cher&api_key=APIKEY&format=json
+		url.put("method", "artist.getevents");
+		
+		//FIXME: Band names consisting of two words or more are parsed incorrectly
+		url.put("artist" , bandName);
+		url.put("api_key", properties.get("API_KEY"));
+		url.put("format", "json");
+		url.put("autocorrect", "1");
+	//	url.put("festivalsonly", "1");
+		
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		System.out.println(url);
+		HttpResponse httpResponse = request.execute();
+		
+	//	System.out.println(httpResponse.parseAsString());
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONObject responseEvents = (JSONObject) response.get("events");
+		JSONArray responseEventsEvent = (JSONArray) responseEvents.get("event");
+		List<JSONObject> result = new ArrayList<JSONObject>();
+		for (Object event : responseEventsEvent){
+			result.add((JSONObject)event);
+			System.out.println(event.toString());
+			//TODO: change to only extract the relevant data (title, artists, venue, startDate, endDate (if available), website )
+			//maybe extract to an appropriate Java-Class instead of JSON
+		}
+		
+		return null;
+	}
+		return filteredList;}
 
 	private static List<GenericUrl> getTwitterTimelineRss(List<GenericUrl> socialMediaUrls) throws FileNotFoundException, IOException {
 		properties.load(new FileInputStream("twitter.properties"));
@@ -39,7 +91,7 @@ public class facebookRssFeedFinder {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
-		GenericUrl url = new GenericUrl("https://api.twitter.com/1.1/statuses/user_timeline.json");
+		GenericUrl url = new GenericUrl("https://api.twitter.com/1.1/statuses/user_timeline.json"  );
 		
 		
 		List<GenericUrl> filteredList = new ArrayList<GenericUrl>();
@@ -53,6 +105,7 @@ public class facebookRssFeedFinder {
 			}
 		}
 		
+		if (filteredList.size() > 0){
 		System.out.println(filteredList.get(0));
 		
 		String bandName = filteredList.get(0).toString().split("twitter.com/")[1];
@@ -69,7 +122,11 @@ public class facebookRssFeedFinder {
 	//	HttpRequest request = requestFactory.buildGetRequest(url);
 	//	HttpResponse httpResponse = request.execute();
 	//	System.out.println(httpResponse.parseAsString());
-		return null;
+		return null;}
+		
+		else{
+			System.out.println("no Twitter!");
+			return null;}
 		
 	}
 
@@ -115,7 +172,7 @@ public class facebookRssFeedFinder {
 				
 			}
 		}
-		
+		if (filteredList.size() > 0){
 		System.out.println(filteredList.get(0));
 		
 		String bandName = filteredList.get(0).toString().split("facebook.com/")[1];
@@ -133,7 +190,9 @@ public class facebookRssFeedFinder {
 		
 		System.out.println(RssFeedUrl);
 		
-		return RssFeedUrl;
+		return RssFeedUrl;}
+		
+		else {System.out.println("no facebook!");return null;}
 	}
 
 	private static String parseFacebookResponse(HttpResponse httpResponse)
