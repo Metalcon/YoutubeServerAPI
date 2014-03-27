@@ -29,7 +29,48 @@ public class facebookRssFeedFinder {
 		List<GenericUrl> socialMediaUrls = new ArrayList<GenericUrl>();
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
 		getFacebookRssUrl(socialMediaUrls);
+		getTwitterTimelineRss(socialMediaUrls);
 
+	}
+
+	private static List<GenericUrl> getTwitterTimelineRss(List<GenericUrl> socialMediaUrls) throws FileNotFoundException, IOException {
+		properties.load(new FileInputStream("twitter.properties"));
+		
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl("https://api.twitter.com/1.1/statuses/user_timeline.json");
+		
+		
+		List<GenericUrl> filteredList = new ArrayList<GenericUrl>();
+
+		
+		
+		for (int i = 0; i < socialMediaUrls.size(); i++) {
+			if (socialMediaUrls.get(i).toString().contains("twitter")){
+				filteredList.add(socialMediaUrls.get(i));
+				
+			}
+		}
+		
+		System.out.println(filteredList.get(0));
+		
+		String bandName = filteredList.get(0).toString().split("twitter.com/")[1];
+		
+		//FIXME: this request does not work (response: Bad Authentication data)
+		//TODO: find out how to authenticate correctly (API documentation is fubar!)
+	//	url.put("screen_name", bandName);
+	//	url.put("oauth_token", properties.get("ACCESS_TOKEN"));
+	//	url.put("oauth_consumer_key", properties.get("API_KEY"));
+	//	url.put("oauth_signature_method", properties.get("OAUTH_METHOD"));
+	//	url.put("oauth_version","1.0");
+	//	System.out.println(bandName);
+	//	System.out.println(url);
+	//	HttpRequest request = requestFactory.buildGetRequest(url);
+	//	HttpResponse httpResponse = request.execute();
+	//	System.out.println(httpResponse.parseAsString());
+		return null;
+		
 	}
 
 	private static List<GenericUrl> getBandSocialMediaPresence(String bandMid)
