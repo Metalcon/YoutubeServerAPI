@@ -51,15 +51,54 @@ public class facebookRssFeedFinder {
 		return filteredList;
 	}
 
-	private static void getYoutubeClips(List<GenericUrl> otherWebpagesUrls) {
+	private static void getYoutubeClips(List<GenericUrl> otherWebpagesUrls)
+			throws FileNotFoundException, IOException, ParseException {
+		// freebase-API-Key == google-API-Key
+		properties.load(new FileInputStream("freebase.properties"));
+
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
 		List<GenericUrl> filteredList = filterUrlList(otherWebpagesUrls,
 				"http://www.youtube.com/user");
+		String YoutubeChannelId = getYoutubeChannelId(filteredList.get(0));
+		// it seems like there is never more than one youtube-channel per band.
+		// If this is false, a way to decide which one to take has to be found
 		if (filteredList.size() > 1)
 			System.out
 					.println("This band has more than one Youtube-Channel!!!");
 
 		// TODO: implement getting youtube-clips via youtube-API
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/channels");
+		String channelName = filteredList.get(0).toString()
+				.split("http://www.youtube.com/user/")[1];
+		url.put("key", properties.get("API_KEY"));
+		url.put("forUsername", channelName);
+		url.put("part", "contentDetails");
+		System.out.println(url);
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
 
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONArray responseItems = (JSONArray) response.get("items");
+		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
+		JSONObject responseItemsEntryContentdetails = (JSONObject) responseItemsEntry
+				.get("contentDetails");
+		JSONObject responseItemsEntryContentdetailsRelatedplaylists = (JSONObject) responseItemsEntryContentdetails
+				.get("relatedPlaylists");
+		String playlistId = responseItemsEntryContentdetailsRelatedplaylists
+				.get("uploads").toString();
+
+		// https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=UUaisXKBdNOYqGr2qOXCLchQ
+	}
+
+	// TODO: use this method for refactoring
+	private static String getYoutubeChannelId(GenericUrl genericUrl) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private static List<GenericUrl> getOtherWebpages(String bandMid)
