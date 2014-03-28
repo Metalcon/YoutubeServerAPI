@@ -14,7 +14,14 @@ import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 
-public class SingleAlbumSearch {
+/**
+ * This class look up the tracks on an album with single (as in "not bulk")
+ * requests.
+ * 
+ * @author Christian Schowalter
+ * 
+ */
+public class singleTrackSearch {
 	public static Properties properties = new Properties();
 
 	public static void main(String[] args) {
@@ -26,13 +33,12 @@ public class SingleAlbumSearch {
 			JSONParser parser = new JSONParser();
 			GenericUrl url = new GenericUrl(
 					"https://www.googleapis.com/freebase/v1/mqlread");
-
+			// url.put("mid", "/m/02g_zp");
+			// url.put("kind", "/music/artist/album");
+			// url.put("que", "");
 			// TODO: implement reading mid from file
-			String bandMid = "/m/02g_zp\"";
-
-			String query = "[{\"mid\":\""
-					+ bandMid
-					+ "\",\"/music/artist/album\":[{\"name\":null , \"mid\":null}]}]";
+			// TODO: get right schema
+			String query = "[{\"mid\":\"/m/01ls_c8\",\"/music/recording\":[]}]";
 			url.put("query", query);
 
 			System.out.println("my API-Key: " + properties.get("API_KEY"));
