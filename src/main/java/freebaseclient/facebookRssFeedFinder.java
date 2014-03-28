@@ -44,8 +44,7 @@ public class facebookRssFeedFinder {
 		List<GenericUrl> filteredList = new ArrayList<GenericUrl>();
 
 		for (int i = 0; i < webPageUrls.size(); i++) {
-			if (webPageUrls.get(i).toString()
-					.contains("http://www.youtube.com/user")) {
+			if (webPageUrls.get(i).toString().contains(filter)) {
 				filteredList.add(webPageUrls.get(i));
 			}
 		}
@@ -55,6 +54,9 @@ public class facebookRssFeedFinder {
 	private static void getYoutubeClips(List<GenericUrl> otherWebpagesUrls) {
 		List<GenericUrl> filteredList = filterUrlList(otherWebpagesUrls,
 				"http://www.youtube.com/user");
+		if (filteredList.size() > 1)
+			System.out
+					.println("This band has more than one Youtube-Channel!!!");
 
 		// TODO: implement getting youtube-clips via youtube-API
 
@@ -151,7 +153,7 @@ public class facebookRssFeedFinder {
 				"https://api.twitter.com/1.1/statuses/user_timeline.json");
 
 		List<GenericUrl> filteredList = filterUrlList(socialMediaUrls,
-				"http://twitter.com");
+				"twitter");
 
 		if (filteredList.size() > 0) {
 			System.out.println(filteredList.get(0));
