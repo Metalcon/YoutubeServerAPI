@@ -16,6 +16,7 @@ import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.jayway.jsonpath.JsonPath;
@@ -30,11 +31,13 @@ public class facebookRssFeedFinder {
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
 		List<GenericUrl> otherWebpagesUrls = new ArrayList<GenericUrl>();
 		otherWebpagesUrls = getOtherWebpages(bandMid);
-
-		getFacebookRssUrl(socialMediaUrls);
-		getTwitterTimelineRss(socialMediaUrls);
-		getLastfmEvents(socialMediaUrls);
-
+		if (socialMediaUrls != null) {
+			getFacebookRssUrl(socialMediaUrls);
+			getTwitterTimelineRss(socialMediaUrls);
+			getLastfmEvents(socialMediaUrls);
+		} else {
+			System.out.println("No social media presence found");
+		}
 		getYoutubeClips(otherWebpagesUrls);
 
 	}
@@ -58,18 +61,23 @@ public class facebookRssFeedFinder {
 
 		List<GenericUrl> filteredList = filterUrlList(otherWebpagesUrls,
 				"http://www.youtube.com/user");
-		String channelName = filteredList.get(0).toString()
-				.split("http://www.youtube.com/user/")[1];
+		if (filteredList.size() > 0) {
+			String channelName = filteredList.get(0).toString()
+					.split("http://www.youtube.com/user/")[1];
 
-		// it seems like there is never more than one youtube-channel per band.
-		// If this is false, a way to decide which one to take has to be found
-		if (filteredList.size() > 1)
-			System.out
-					.println("This band has more than one Youtube-Channel!!!");
+			// it seems like there is never more than one youtube-channel per
+			// band.
+			// If this is false, a way to decide which one to take has to be
+			// found
+			if (filteredList.size() > 1)
+				System.out
+						.println("This band has more than one Youtube-Channel!!!");
 
-		String youtubeChannelId = getYoutubeChannelId(channelName);
-		List<String> videoClipIds = getVideoClipIDs(youtubeChannelId);
-
+			String youtubeChannelId = getYoutubeChannelId(channelName);
+			List<String> videoClipIds = getVideoClipIDs(youtubeChannelId);
+		} else {
+			System.out.println("no youtube channel found");
+		}
 		// https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=UUaisXKBdNOYqGr2qOXCLchQ
 	}
 
@@ -111,7 +119,9 @@ public class facebookRssFeedFinder {
 				lockedList.add(videoID);
 			}
 		}
-		System.out.println("List of locked Videos");
+		System.out.println("List of Videos(" + resultList.size() + ")");
+		System.out.println(resultList);
+		System.out.println("List of locked Videos (" + lockedList.size() + ")");
 		System.out.println(lockedList);
 		return resultList;
 	}
@@ -138,7 +148,7 @@ public class facebookRssFeedFinder {
 				.get("contentDetails");
 		if (responseItemsEntryContentdetails.containsKey("regionRestriction")) {
 			System.out.println("Video with id: " + videoID
-					+ "is locked in Germany!");
+					+ " is locked in Germany!");
 			return false;
 		} else {
 			return true;
@@ -311,22 +321,27 @@ public class facebookRssFeedFinder {
 		// System.out.println(url);
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse httpResponse = request.execute();
-		JSONParser parser = new JSONParser();
-		JSONObject response = (JSONObject) parser.parse(httpResponse
-				.parseAsString());
-		JSONObject responseProperty = (JSONObject) response.get("property");
-		JSONObject responsePropertyValues = (JSONObject) responseProperty
-				.get("/common/topic/social_media_presence");
-		JSONArray pages = (JSONArray) responsePropertyValues.get("values");
+		try {
+			JSONParser parser = new JSONParser();
+			JSONObject response = (JSONObject) parser.parse(httpResponse
+					.parseAsString());
+			JSONObject responseProperty = (JSONObject) response.get("property");
 
-		List<GenericUrl> resultList = new ArrayList<GenericUrl>();
-		for (Object page : pages) {
-			GenericUrl pageUrl = new GenericUrl(JsonPath.read(page, "$.value")
-					.toString());
-			resultList.add(pageUrl);
+			JSONObject responsePropertyValues = (JSONObject) responseProperty
+					.get("/common/topic/social_media_presence");
+			JSONArray pages = (JSONArray) responsePropertyValues.get("values");
+
+			List<GenericUrl> resultList = new ArrayList<GenericUrl>();
+			for (Object page : pages) {
+				GenericUrl pageUrl = new GenericUrl(JsonPath.read(page,
+						"$.value").toString());
+				resultList.add(pageUrl);
+			}
+			return resultList;
+		} catch (NullPointerException E) {
+			return null;
 		}
 
-		return resultList;
 	}
 
 	private static GenericUrl getFacebookRssUrl(List<GenericUrl> socialMediaUrls)
@@ -338,7 +353,7 @@ public class facebookRssFeedFinder {
 		List<GenericUrl> filteredList = filterUrlList(socialMediaUrls,
 				"facebook");
 
-		if (filteredList.size() > 0) {
+		try {
 			System.out.println(filteredList.get(0));
 
 			String bandName = filteredList.get(0).toString()
@@ -361,7 +376,7 @@ public class facebookRssFeedFinder {
 			return RssFeedUrl;
 		}
 
-		else {
+		catch (HttpResponseException E) {
 			System.out.println("no facebook!");
 			return null;
 		}
