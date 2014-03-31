@@ -25,7 +25,7 @@ public class facebookRssFeedFinder {
 
 	public static void main(String[] args) throws IOException, ParseException {
 
-		String bandMid = "/m/014_xj";
+		String bandMid = "/m/03y2lh";
 		List<GenericUrl> socialMediaUrls = new ArrayList<GenericUrl>();
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
 		List<GenericUrl> otherWebpagesUrls = new ArrayList<GenericUrl>();
@@ -85,11 +85,11 @@ public class facebookRssFeedFinder {
 		url.put("playlistId", youtubeChannelId);
 		url.put("key", properties.get("API_KEY"));
 		url.put("maxResults", "50");
-		System.out.println(url);
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse httpResponse = request.execute();
 
 		List<String> resultList = new ArrayList<String>();
+		List<String> lockedList = new ArrayList<String>();
 
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
@@ -102,12 +102,47 @@ public class facebookRssFeedFinder {
 					.get("snippet");
 			JSONObject responseItemsEntrySnippetResourceid = (JSONObject) responseItemsEntrySnippet
 					.get("resourceId");
-			resultList.add(responseItemsEntrySnippetResourceid.get("videoId")
-					.toString());
-			System.out.println(resultList.get(i));
+			String videoID = responseItemsEntrySnippetResourceid.get("videoId")
+					.toString();
+			boolean checkRegionLock = getRegionLockInfo(videoID);
+			if (checkRegionLock) {
+				resultList.add(videoID);
+			} else {
+				lockedList.add(videoID);
+			}
 		}
-
+		System.out.println("List of locked Videos");
+		System.out.println(lockedList);
 		return resultList;
+	}
+
+	private static boolean getRegionLockInfo(String videoID)
+			throws IOException, ParseException {
+		// https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=91EAEKF2plE&key={YOUR_API_KEY}
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/videos");
+		url.put("part", "contentDetails");
+		url.put("id", videoID);
+		url.put("key", properties.get("API_KEY"));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONArray responseItems = (JSONArray) response.get("items");
+		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
+		JSONObject responseItemsEntryContentdetails = (JSONObject) responseItemsEntry
+				.get("contentDetails");
+		if (responseItemsEntryContentdetails.containsKey("regionRestriction")) {
+			System.out.println("Video with id: " + videoID
+					+ "is locked in Germany!");
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	// TODO: use this method for refactoring
