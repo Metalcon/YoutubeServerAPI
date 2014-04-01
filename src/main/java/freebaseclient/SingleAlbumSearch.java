@@ -36,7 +36,7 @@ public class SingleAlbumSearch {
 					"https://www.googleapis.com/freebase/v1/mqlread");
 
 			// TODO: implement reading mid from file
-			String bandMid = "/m/014_xj\"";
+			String bandMid = "/m/014_xj";
 
 			String query = "[{\"mid\":\""
 					+ bandMid
