@@ -29,7 +29,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
  * @author Christian Schowalter
  * 
  */
-public class singleTrackSearch {
+public class SingleTrackSearch {
 	public static Properties properties = new Properties();
 
 	public static void main(String[] args) {
