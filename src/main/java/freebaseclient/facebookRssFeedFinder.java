@@ -156,7 +156,6 @@ public class facebookRssFeedFinder {
 		}
 		if (response.containsKey("nextPageToken")) {
 			String nextPageToken = response.get("nextPageToken").toString();
-			System.out.println("Next Page Token: " + nextPageToken);
 			getNextPage(youtubeChannelId, nextPageToken, resultList, lockedList);
 		}
 		System.out.println("List of available Videos(" + resultList.size()
