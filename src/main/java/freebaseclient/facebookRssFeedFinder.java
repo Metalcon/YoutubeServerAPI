@@ -1,7 +1,12 @@
 package freebaseclient;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +31,7 @@ public class facebookRssFeedFinder {
 
 	public static void main(String[] args) throws IOException, ParseException {
 
-		String bandMid = "/m/03y2lh";
+		String bandMid = "/m/04rcr";
 		List<GenericUrl> socialMediaUrls = new ArrayList<GenericUrl>();
 		socialMediaUrls = getBandSocialMediaPresence(bandMid);
 		List<GenericUrl> otherWebpagesUrls = new ArrayList<GenericUrl>();
@@ -54,6 +59,34 @@ public class facebookRssFeedFinder {
 		return filteredList;
 	}
 
+	private static List<String> readInputFile(String inputFile) {
+		String line;
+		List<String> listArray = new ArrayList<String>();
+		try {
+			FileReader fileReader = new FileReader(inputFile + ".csv");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			for (int i = 0; (line = bufferedReader.readLine()) != null; ++i) {
+				listArray.add(line);
+			}
+		} catch (IOException e) {
+			System.err.println("Problem reading List!");
+			e.printStackTrace();
+		}
+		return listArray;
+	}
+
+	public static void writeToFile(String dataToSave, String saveFileName)
+			throws IOException {
+		File outputFile = new File(saveFileName + ".csv");
+		if (!outputFile.exists()) {
+			outputFile.createNewFile();
+		}
+		FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
+		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+		bufferedWriter.write(dataToSave);
+		bufferedWriter.close();
+	}
+
 	private static void getYoutubeClips(List<GenericUrl> otherWebpagesUrls)
 			throws FileNotFoundException, IOException, ParseException {
 		// freebase-API-Key == google-API-Key
@@ -64,7 +97,7 @@ public class facebookRssFeedFinder {
 		if (filteredList.size() > 0) {
 			String channelName = filteredList.get(0).toString()
 					.split("http://www.youtube.com/user/")[1];
-
+			System.out.println("Name of youtube channel : " + channelName);
 			// it seems like there is never more than one youtube-channel per
 			// band.
 			// If this is false, a way to decide which one to take has to be
@@ -74,6 +107,7 @@ public class facebookRssFeedFinder {
 						.println("This band has more than one Youtube-Channel!!!");
 
 			String youtubeChannelId = getYoutubeChannelId(channelName);
+			System.out.println("Channel ID: " + youtubeChannelId);
 			List<String> videoClipIds = getVideoClipIDs(youtubeChannelId);
 		} else {
 			System.out.println("no youtube channel found");
@@ -102,6 +136,7 @@ public class facebookRssFeedFinder {
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
 				.parseAsString());
+
 		JSONArray responseItems = (JSONArray) response.get("items");
 
 		for (int i = 0; i < responseItems.size(); ++i) {
@@ -119,11 +154,63 @@ public class facebookRssFeedFinder {
 				lockedList.add(videoID);
 			}
 		}
-		System.out.println("List of Videos(" + resultList.size() + ")");
+		if (response.containsKey("nextPageToken")) {
+			String nextPageToken = response.get("nextPageToken").toString();
+			System.out.println("Next Page Token: " + nextPageToken);
+			getNextPage(youtubeChannelId, nextPageToken, resultList, lockedList);
+		}
+		System.out.println("List of available Videos(" + resultList.size()
+				+ ")");
 		System.out.println(resultList);
 		System.out.println("List of locked Videos (" + lockedList.size() + ")");
 		System.out.println(lockedList);
 		return resultList;
+	}
+
+	private static void getNextPage(String youtubeChannelId,
+			String nextPageToken, List<String> resultList,
+			List<String> lockedList) throws IOException, ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/playlistItems");
+		url.put("part", "snippet");
+		url.put("playlistId", youtubeChannelId);
+		url.put("key", properties.get("API_KEY"));
+		url.put("maxResults", "50");
+		url.put("pageToken", nextPageToken);
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+
+		JSONArray responseItems = (JSONArray) response.get("items");
+
+		for (int i = 0; i < responseItems.size(); ++i) {
+			JSONObject responseItemsEntry = (JSONObject) responseItems.get(i);
+			JSONObject responseItemsEntrySnippet = (JSONObject) responseItemsEntry
+					.get("snippet");
+			JSONObject responseItemsEntrySnippetResourceid = (JSONObject) responseItemsEntrySnippet
+					.get("resourceId");
+			String videoID = responseItemsEntrySnippetResourceid.get("videoId")
+					.toString();
+			boolean checkRegionLock = getRegionLockInfo(videoID);
+			if (checkRegionLock) {
+				resultList.add(videoID);
+			} else {
+				lockedList.add(videoID);
+			}
+
+		}
+		if (response.containsKey("nextPageToken")) {
+			String newNextPageToken = response.get("nextPageToken").toString();
+			getNextPage(youtubeChannelId, newNextPageToken, resultList,
+					lockedList);
+		}
+
 	}
 
 	private static boolean getRegionLockInfo(String videoID)
@@ -147,8 +234,6 @@ public class facebookRssFeedFinder {
 		JSONObject responseItemsEntryContentdetails = (JSONObject) responseItemsEntry
 				.get("contentDetails");
 		if (responseItemsEntryContentdetails.containsKey("regionRestriction")) {
-			System.out.println("Video with id: " + videoID
-					+ " is locked in Germany!");
 			return false;
 		} else {
 			return true;

@@ -1,6 +1,14 @@
 package freebaseclient;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.json.simple.JSONArray;
@@ -60,5 +68,33 @@ public class singleTrackSearch {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+	}
+
+	private static List<String> readInputFile(String inputFile) {
+		String line;
+		List<String> listArray = new ArrayList<String>();
+		try {
+			FileReader fileReader = new FileReader(inputFile + ".csv");
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			for (int i = 0; (line = bufferedReader.readLine()) != null; ++i) {
+				listArray.add(line);
+			}
+		} catch (IOException e) {
+			System.err.println("Problem reading List!");
+			e.printStackTrace();
+		}
+		return listArray;
+	}
+
+	public static void writeToFile(String dataToSave, String saveFileName)
+			throws IOException {
+		File outputFile = new File(saveFileName + ".csv");
+		if (!outputFile.exists()) {
+			outputFile.createNewFile();
+		}
+		FileWriter fileWriter = new FileWriter(outputFile.getAbsoluteFile());
+		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+		bufferedWriter.write(dataToSave);
+		bufferedWriter.close();
 	}
 }
