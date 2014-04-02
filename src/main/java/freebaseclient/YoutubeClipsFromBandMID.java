@@ -165,7 +165,7 @@ public class YoutubeClipsFromBandMID {
 			String youtubeId = responseItemsId.get("videoId").toString();
 			YoutubeMetaData temp = new YoutubeMetaData();
 			temp.setYoutubeID(youtubeId);
-			System.out.println(youtubeId);
+			System.out.println("www.youtube.com/watch?v=" + youtubeId);
 			JSONObject detailedResults = genericYoutubeCall(
 					"snippet, contentDetails, statistics", youtubeId);
 			processingDetailedResults(detailedResults, temp);
