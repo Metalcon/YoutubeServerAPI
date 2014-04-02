@@ -10,5 +10,7 @@ package api;
  */
 public class FreebaseMetaData {
 
-    private String mid;
+	private String mid;
+	private double confidence;
+	private String type;
 }
