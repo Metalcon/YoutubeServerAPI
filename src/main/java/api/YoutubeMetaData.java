@@ -1,6 +1,5 @@
 package api;
 
-import java.util.Date;
 
 /**
  * stores information from one or several successfull youtube requests.
@@ -15,7 +14,7 @@ public class YoutubeMetaData {
 	private String youtubeID;
 	private String channelID;
 	private String title;
-	private Date publishedAt;
+	private String publishedAt;
 	private String duration;
 	private String viewCount;
 	private String likeCount;
@@ -46,11 +45,11 @@ public class YoutubeMetaData {
 		this.title = title;
 	}
 
-	public Date getPublishedAt() {
+	public String getPublishedAt() {
 		return publishedAt;
 	}
 
-	public void setPublishedAt(Date publishedAt) {
+	public void setPublishedAt(String publishedAt) {
 		this.publishedAt = publishedAt;
 	}
 
