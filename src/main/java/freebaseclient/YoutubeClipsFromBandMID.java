@@ -32,17 +32,33 @@ public class YoutubeClipsFromBandMID {
 
 	public static void main(String[] args) throws IOException, ParseException {
 		// Placeholder for file input MID
-		String bandMid = "/m/04473z";
-		String title = "Beyond the Dark Sun";
+		String bandMid = "/m/03y2lh";
+		String title = "Celestial Bond";
 		// List<YoutubeMetaData> list = getVideosForTrackAndBand(bandMid,
 		// title);
 		List<YoutubeMetaData> container = new ArrayList<YoutubeMetaData>();
 		properties.load(new FileInputStream("freebase.properties"));
 
-		JSONObject response = youtubeSongSearch(50, title, bandMid);
+		JSONObject response = youtubeSongSearch(5, title, bandMid);
 		processingSearchResults(response, container);
-		System.out.println(container.get(0).getYoutubeID());
-
+		System.out.println("First entry: ");
+		System.out.println("youtubeId "
+				+ container.get(0).getYoutubeID().toString());
+		System.out.println("channelId "
+				+ container.get(0).getChannelID().toString());
+		System.out.println("title " + container.get(0).getTitle().toString());
+		System.out.println("publishedAt "
+				+ container.get(0).getPublishedAt().toString());
+		System.out.println("duration "
+				+ container.get(0).getDuration().toString());
+		System.out.println("viewCount "
+				+ container.get(0).getViewCount().toString());
+		System.out.println("likeCount "
+				+ container.get(0).getLikeCount().toString());
+		System.out.println("dislikeCount "
+				+ container.get(0).getDislikeCount().toString());
+		System.out.println("commentCount "
+				+ container.get(0).getCommentCount().toString());
 	}
 
 	/**
@@ -76,7 +92,6 @@ public class YoutubeClipsFromBandMID {
 		url.put("q", songTitle);
 		url.put("topicId", topicID);
 		url.put("key", properties.get("API_KEY"));
-		System.out.println(url);
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse httpResponse = request.execute();
 		JSONParser parser = new JSONParser();
@@ -113,12 +128,9 @@ public class YoutubeClipsFromBandMID {
 
 		GenericUrl url = new GenericUrl(
 				"https://www.googleapis.com/youtube/v3/videos");
-		url.put("part", "contentDetails");
-		url.put("part", "snippet");
-		url.put("part", "statistics");
+		url.put("part", part);
 		url.put("id", youtubeID);
 		url.put("key", properties.get("API_KEY"));
-		System.out.println(url);
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse httpResponse = request.execute();
 		JSONParser parser = new JSONParser();
@@ -151,12 +163,11 @@ public class YoutubeClipsFromBandMID {
 			JSONObject responseItemsId = (JSONObject) responseItemsEntry
 					.get("id");
 			String youtubeId = responseItemsId.get("videoId").toString();
-			System.out.println("video id: " + youtubeId);
 			YoutubeMetaData temp = new YoutubeMetaData();
 			temp.setYoutubeID(youtubeId);
-			JSONObject detailedResults = genericYoutubeCall("contentDetails",
-					youtubeId);
-			System.out.println(detailedResults);
+			System.out.println(youtubeId);
+			JSONObject detailedResults = genericYoutubeCall(
+					"snippet, contentDetails, statistics", youtubeId);
 			processingDetailedResults(detailedResults, temp);
 			container.add(temp);
 		}
@@ -180,10 +191,11 @@ public class YoutubeClipsFromBandMID {
 		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
 		JSONObject responseSnippet = (JSONObject) responseItemsEntry
 				.get("snippet");
-		youtubeTemp.setChannelID(responseSnippet.get("channelId").toString());
 		System.out.println("channelId "
 				+ responseSnippet.get("channelId").toString());
+		youtubeTemp.setChannelID(responseSnippet.get("channelId").toString());
 		youtubeTemp.setTitle(responseSnippet.get("title").toString());
+		System.out.println("title: " + responseSnippet.get("title").toString());
 		youtubeTemp.setPublishedAt(responseSnippet.get("publishedAt")
 				.toString());
 		System.out.println("publishedAt "
@@ -212,6 +224,7 @@ public class YoutubeClipsFromBandMID {
 				.toString());
 		System.out.println("commentCount"
 				+ responseStatistics.get("commentCount").toString());
+		System.out.println("------------------------------");
 	}
 
 	/*
