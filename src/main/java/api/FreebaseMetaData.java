@@ -3,9 +3,9 @@ package api;
 /**
  * Class which stores the freebase ids
  * 
- * TODO: extend with more class fields and create getters and setters
+ * TODO: check if that are all field we need
  * 
- * @author rpickhardt
+ * @author rpickhardt, cschowalter
  * 
  */
 public class FreebaseMetaData {
