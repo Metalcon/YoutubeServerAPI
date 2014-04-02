@@ -3,12 +3,39 @@ package api;
 /**
  * Class which stores the freebase ids
  * 
- * TODO: extend with more class fields and create getters and setters
+ * TODO: check if that are all field we need
  * 
- * @author rpickhardt
+ * @author rpickhardt, cschowalter
  * 
  */
 public class FreebaseMetaData {
 
-    private String mid;
+	private String mid;
+	private double confidence;
+	private String type;
+
+	public String getMid() {
+		return mid;
+	}
+
+	public void setMid(String mid) {
+		this.mid = mid;
+	}
+
+	public double getConfidence() {
+		return confidence;
+	}
+
+	public void setConfidence(double confidence) {
+		this.confidence = confidence;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
 }
