@@ -136,6 +136,7 @@ public class facebookRssFeedFinder {
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
 				.parseAsString());
+		System.out.println("response:  " + response);
 
 		JSONArray responseItems = (JSONArray) response.get("items");
 
