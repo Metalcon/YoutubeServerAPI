@@ -30,37 +30,48 @@ import com.jayway.jsonpath.JsonPath;
  */
 public class MetalconFreebaseRequest implements api.FreebaseRequest {
 
-	public static Properties properties = new Properties();
+	// TODO: the methods get the API-Key from a file on disc. Check if this
+	// makes sense!
+	private static Properties properties = new Properties();
 
+	/**
+	 * Bulk reconcilation
+	 * 
+	 * @return a list containing the meta data that could be obtained. If no mid
+	 *         was found, the mid field will be null and the confidence 0.
+	 * @throws IOException
+	 *             , ParseException
+	 */
 	public List<FreebaseMetaData> reconcileBands(List<String> bands)
 			throws IOException, ParseException {
 		final int maximalQueryLength = 100;
 
-		List<FreebaseMetaData> freeBaseMetaData = new ArrayList<FreebaseMetaData>();
+		List<FreebaseMetaData> freeBaseMetaDataBands = new ArrayList<FreebaseMetaData>();
 
 		if (bands.size() > maximalQueryLength) {
 			for (int i = 0; i < bands.size(); i += maximalQueryLength - 1) {
 				if (i + maximalQueryLength - 1 < bands.size()) {
 					List<String> bandListPart = bands.subList(i, i
 							+ maximalQueryLength - 1);
-					HttpResponse httpResponse = BuildRequest(bandListPart)
-							.execute();
-					freeBaseMetaData.add(parseResponse(httpResponse,
+					HttpResponse httpResponse = buildReconciliationRequest(
+							bandListPart).execute();
+					freeBaseMetaDataBands.add(parseResponse(httpResponse,
 							bandListPart));
 				} else {
 					List<String> bandListPart = bands.subList(i, bands.size());
-					HttpResponse httpResponse = BuildRequest(bandListPart)
-							.execute();
-					freeBaseMetaData.add(parseResponse(httpResponse,
+					HttpResponse httpResponse = buildReconciliationRequest(
+							bandListPart).execute();
+					freeBaseMetaDataBands.add(parseResponse(httpResponse,
 							bandListPart));
 				}
 
 			}
 		} else {
-			HttpResponse httpResponse = BuildRequest(bands).execute();
-			freeBaseMetaData.add(parseResponse(httpResponse, bands));
+			HttpResponse httpResponse = buildReconciliationRequest(bands)
+					.execute();
+			freeBaseMetaDataBands.add(parseResponse(httpResponse, bands));
 		}
-		return freeBaseMetaData;
+		return freeBaseMetaDataBands;
 	}
 
 	private FreebaseMetaData parseResponse(HttpResponse httpResponse,
@@ -86,8 +97,7 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 			JSONArray responseEntryResultCandidates = (JSONArray) responseEntryResult
 					.get("candidate");
 			if (responseEntryResultCandidates == null) {
-				System.out.println("null result received -->"
-						+ bandListPart.get(j));
+				freebaseMetaDataEntry.setConfidence(0.0);
 			} else {
 
 				freebaseMetaDataEntry.setMid(JsonPath.read(
@@ -104,7 +114,7 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 
 	}
 
-	private HttpRequest BuildRequest(List<String> bandListPart)
+	private HttpRequest buildReconciliationRequest(List<String> bandListPart)
 			throws IOException {
 
 		try {
@@ -166,17 +176,26 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 		return request;
 	}
 
+	/**
+	 * Single reconcilation
+	 * 
+	 * @return a String containing the meta data that could be obtained. If no
+	 *         mid was found, the mid field will be null and the confidence 0.
+	 * @throws IOException
+	 *             , ParseException
+	 */
 	public FreebaseMetaData reconcileBand(String bandname) throws IOException,
 			ParseException {
-		FreebaseMetaData freebaseMetaData = new FreebaseMetaData();
-		HttpResponse httpResponse = BuildRequest(bandname).execute();
+		FreebaseMetaData freebaseMetaDataBand = new FreebaseMetaData();
+		HttpResponse httpResponse = buildReconciliationRequest(bandname)
+				.execute();
 		FreebaseMetaData response = parseResponse(httpResponse,
-				freebaseMetaData);
+				freebaseMetaDataBand);
 		return response;
 	}
 
-	private HttpRequest BuildRequest(String bandname) throws IOException,
-			ParseException {
+	private HttpRequest buildReconciliationRequest(String bandname)
+			throws IOException, ParseException {
 		try {
 			properties.load(new FileInputStream("freebase.properties"));
 		} catch (IOException e1) {
@@ -205,9 +224,7 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 				.parseAsString());
 		JSONArray candidates = (JSONArray) response.get("candidate");
 		if (candidates == null) {
-			// TODO: define what happens if Freebase found nothing
-			// System.out.println("nothing found");
-			return null;
+			result.setConfidence(0.0);
 		} else {
 			for (int j = 0; j < response.size(); j++) {
 				JSONObject responseEntry = (JSONObject) jsonParser
@@ -219,13 +236,67 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 						responseEntry.get(0), "$.confidence").toString()));
 			}
 
-			return result;
 		}
+		return result;
 	}
 
-	public List<FreebaseMetaData> retrieveRecordsForFreebaseBand(String mid) {
-		// TODO Auto-generated method stub
-		return null;
+	/**
+	 * @return a list containing the name and mids of the bands records
+	 * @param a
+	 *            Metabase-ID of a music band
+	 */
+	public List<FreebaseMetaData> retrieveRecordsForFreebaseBand(String bandMid)
+			throws IOException, ParseException {
+		List<FreebaseMetaData> freeBaseMetaDataRecords = new ArrayList<FreebaseMetaData>();
+		HttpResponse httpResponse = buildSearchRequest(bandMid).execute();
+
+		freeBaseMetaDataRecords = parseRecordSearchResponse(httpResponse,
+				freeBaseMetaDataRecords);
+		return freeBaseMetaDataRecords;
+	}
+
+	private List<FreebaseMetaData> parseRecordSearchResponse(
+			HttpResponse httpResponse,
+			List<FreebaseMetaData> freeBaseMetaDataRecords)
+			throws ParseException, IOException {
+		JSONParser parser = new JSONParser();
+		JSONObject responseJson = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONArray resultContainer = (JSONArray) responseJson.get("result");
+		JSONArray resultContainerCategory = JsonPath.read(resultContainer,
+				"$./music/artist/album");
+		for (Object entry : resultContainerCategory) {
+			FreebaseMetaData temp = new FreebaseMetaData();
+			temp.setMid(JsonPath.read(entry, "$.mid").toString());
+			temp.setConfidence(Double.parseDouble(JsonPath
+					.read(entry, "$.name").toString()));
+			freeBaseMetaDataRecords.add(temp);
+		}
+
+		return freeBaseMetaDataRecords;
+	}
+
+	private HttpRequest buildSearchRequest(String bandMid) throws IOException {
+		try {
+			properties.load(new FileInputStream("freebase.properties"));
+		} catch (IOException e1) {
+			System.out.println("Problem reading properties!");
+			e1.printStackTrace();
+		}
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/freebase/v1/mqlread");
+
+		String query = "[{\"mid\":\""
+				+ bandMid
+				+ "\",\"/music/artist/album\":[{\"name\":null , \"mid\":null}]}]";
+		url.put("query", query);
+		url.put("key", properties.get("API_KEY"));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+
+		return request;
 	}
 
 }

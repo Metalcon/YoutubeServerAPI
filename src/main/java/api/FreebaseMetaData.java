@@ -3,7 +3,7 @@ package api;
 /**
  * Class which stores the freebase ids
  * 
- * TODO: check if that are all field we need
+ * TODO: check if that are all fields we need
  * 
  * @author rpickhardt, cschowalter
  * 

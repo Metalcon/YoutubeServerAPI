@@ -47,6 +47,9 @@ public interface FreebaseRequest {
 	 * @param mid
 	 *            of a band
 	 * @return list of records for the band
+	 * @throws IOException
+	 * @throws ParseException
 	 */
-	List<FreebaseMetaData> retrieveRecordsForFreebaseBand(String mid);
+	List<FreebaseMetaData> retrieveRecordsForFreebaseBand(String mid)
+			throws IOException, ParseException;
 }
