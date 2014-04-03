@@ -17,6 +17,7 @@ public class YoutubeMetaData {
 	private String title;
 	private Date publishedAt;
 	private String duration;
+	private int durationInSeconds;
 	private String viewCount;
 	private String likeCount;
 	private String dislikeCount;
@@ -92,6 +93,14 @@ public class YoutubeMetaData {
 
 	public void setCommentCount(String commentCount) {
 		this.commentCount = commentCount;
+	}
+
+	public int getDurationInSeconds() {
+		return durationInSeconds;
+	}
+
+	public void setDurationInSeconds(int durationInSeconds) {
+		this.durationInSeconds = durationInSeconds;
 	}
 
 }

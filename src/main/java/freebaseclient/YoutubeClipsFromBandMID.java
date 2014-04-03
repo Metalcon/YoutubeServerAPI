@@ -9,6 +9,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import org.joda.time.Period;
+import org.joda.time.Seconds;
+import org.joda.time.format.ISOPeriodFormat;
+import org.joda.time.format.PeriodFormatter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -55,6 +59,8 @@ public class YoutubeClipsFromBandMID {
 				+ container.get(0).getPublishedAt().toString());
 		System.out.println("duration "
 				+ container.get(0).getDuration().toString());
+		System.out.println("durationInSeconds :"
+				+ container.get(0).getDurationInSeconds());
 		System.out.println("viewCount "
 				+ container.get(0).getViewCount().toString());
 		System.out.println("likeCount "
@@ -212,6 +218,12 @@ public class YoutubeClipsFromBandMID {
 				.get("contentDetails");
 		youtubeTemp.setDuration(responseContentDetails.get("duration")
 				.toString());
+		PeriodFormatter pf = ISOPeriodFormat.standard();
+		Period p = pf.parsePeriod(responseContentDetails.get("duration")
+				.toString());
+		Seconds s = p.toStandardSeconds();
+		System.out.println("durationInSecond:  " + s.getSeconds());
+		youtubeTemp.setDurationInSeconds(s.getSeconds());
 		System.out.println("duration "
 				+ responseContentDetails.get("duration").toString());
 		JSONObject responseStatistics = (JSONObject) responseItemsEntry
