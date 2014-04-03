@@ -54,7 +54,7 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 			HttpResponse httpResponse = BuildRequest(bands).execute();
 			freeBaseMetaData.add(parseResponse(httpResponse, bands));
 		}
-		return null;
+		return freeBaseMetaData;
 	}
 
 	private FreebaseMetaData parseResponse(HttpResponse httpResponse,
