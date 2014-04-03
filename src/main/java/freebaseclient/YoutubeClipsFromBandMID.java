@@ -40,18 +40,23 @@ public class YoutubeClipsFromBandMID {
 	public static void main(String[] args) throws IOException, ParseException,
 			java.text.ParseException {
 		// Placeholder for file input MID
-		String bandMid = "/m/03d2h22";
-		String trackTitle = "Keelhauled";
-		String recordTitle = "Black Sails at midnight";
+		String bandMid = "/m/04rcr";
+		String trackTitle = "One";
+		String recordTitle = "Black Album";
+		String youtubeChannelName = "inlegendband";
 		properties.load(new FileInputStream("freebase.properties"));
-		// List<YoutubeMetaData> list = getVideosForTrackAndBand(bandMid,
-		// title);
 
 		List<YoutubeMetaData> trackContainer = new ArrayList<YoutubeMetaData>();
 		List<YoutubeMetaData> recordContainer = new ArrayList<YoutubeMetaData>();
+		List<YoutubeMetaData> channelResultContainer = new ArrayList<YoutubeMetaData>();
+		List<YoutubeMetaData> channelLockedContainer = new ArrayList<YoutubeMetaData>();
 
-		JSONObject recordResponse = youtubeSongSearch(10, recordTitle, bandMid);
-		JSONObject trackResponse = youtubeSongSearch(10, trackTitle, bandMid);
+		String youtubeChannelID = getYoutubeChannelId(youtubeChannelName);
+		getVideoClipIDs(youtubeChannelID, channelResultContainer,
+				channelLockedContainer);
+
+		JSONObject recordResponse = youtubeSongSearch(5, recordTitle, bandMid);
+		JSONObject trackResponse = youtubeSongSearch(5, trackTitle, bandMid);
 
 		processingSearchResults(trackResponse, trackContainer);
 		processingSearchResults(recordResponse, recordContainer);
@@ -69,27 +74,13 @@ public class YoutubeClipsFromBandMID {
 		System.out.println("www.youtube.com/watch?v="
 				+ bestRecord.getYoutubeID());
 
+		System.out.println("--------------------------------");
 		System.out.println("First entry: ");
-		System.out.println("youtubeId "
-				+ trackContainer.get(0).getYoutubeID().toString());
-		System.out.println("channelId "
-				+ trackContainer.get(0).getChannelID().toString());
-		System.out.println("title "
-				+ trackContainer.get(0).getTitle().toString());
-		System.out.println("publishedAt "
-				+ trackContainer.get(0).getPublishedAt().toString());
-		System.out.println("duration "
-				+ trackContainer.get(0).getDuration().toString());
-		System.out.println("durationInSeconds :"
-				+ trackContainer.get(0).getDurationInSeconds());
-		System.out.println("viewCount "
-				+ trackContainer.get(0).getViewCount().toString());
-		System.out.println("likeCount "
-				+ trackContainer.get(0).getLikeCount().toString());
-		System.out.println("dislikeCount "
-				+ trackContainer.get(0).getDislikeCount().toString());
-		System.out.println("commentCount "
-				+ trackContainer.get(0).getCommentCount().toString());
+		System.out.println(trackContainer.get(0).toString());
+		System.out.println("--------------------------------");
+
+		System.out.println("First Channel video entry: ");
+		System.out.println(channelResultContainer.get(0).toString());
 	}
 
 	/**
@@ -109,9 +100,8 @@ public class YoutubeClipsFromBandMID {
 	 *             query of a songTitle from that band
 	 */
 
-	public static JSONObject youtubeSongSearch(int maxResults,
-			String songTitle, String topicID) throws IOException,
-			ParseException {
+	public static JSONObject youtubeSongSearch(int maxResults, String query,
+			String topicID) throws IOException, ParseException {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
@@ -120,7 +110,7 @@ public class YoutubeClipsFromBandMID {
 				"https://www.googleapis.com/youtube/v3/search");
 		url.put("part", "id");
 		url.put("maxResults", maxResults);
-		url.put("q", songTitle);
+		url.put("q", query);
 		url.put("topicId", topicID);
 		url.put("type", "video");
 		url.put("key", properties.get("API_KEY"));
@@ -173,6 +163,229 @@ public class YoutubeClipsFromBandMID {
 
 	/**
 	 * 
+	 * @param videoID
+	 *            needs a Youtube videoID
+	 * @return true if the video is viewable in Germany, false if it is blocked
+	 * @throws IOException
+	 * @throws ParseException
+	 * 
+	 *             This method checks if a youtube video is available to view in
+	 *             germany or regionLocked by GEMA
+	 */
+
+	private static boolean getRegionLockInfo(String videoID)
+			throws IOException, ParseException {
+		// https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=91EAEKF2plE&key={YOUR_API_KEY}
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/videos");
+		url.put("part", "contentDetails");
+		url.put("id", videoID);
+		url.put("key", properties.get("API_KEY"));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONArray responseItems = (JSONArray) response.get("items");
+		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
+		JSONObject responseItemsEntryContentdetails = (JSONObject) responseItemsEntry
+				.get("contentDetails");
+		if (responseItemsEntryContentdetails.containsKey("regionRestriction")) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	/**
+	 * 
+	 * @param channelName
+	 *            requires a String with a Youtube Channel Name
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 * 
+	 *             This Method retrieves
+	 */
+
+	private static String getYoutubeChannelId(String channelName)
+			throws IOException, ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/channels");
+
+		url.put("key", properties.get("API_KEY"));
+		url.put("forUsername", channelName);
+		url.put("part", "contentDetails");
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		JSONArray responseItems = (JSONArray) response.get("items");
+		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
+		JSONObject responseItemsEntryContentdetails = (JSONObject) responseItemsEntry
+				.get("contentDetails");
+		JSONObject responseItemsEntryContentdetailsRelatedplaylists = (JSONObject) responseItemsEntryContentdetails
+				.get("relatedPlaylists");
+		return responseItemsEntryContentdetailsRelatedplaylists.get("uploads")
+				.toString();
+	}
+
+	/**
+	 * 
+	 * @param youtubeChannelId
+	 *            requires a youtube Channel ID, probably created with
+	 *            getYoutubeChannelId
+	 * @return returns a list with all videos from the called channel, only
+	 *         videos available in germany are beeing returned, GEMA blocked
+	 *         videos are ignored
+	 * @throws IOException
+	 * @throws ParseException
+	 * 
+	 *             This method retrieves all videos from a specific youtube
+	 *             channel, the call is made with a unique youtube channel id,
+	 *             you can get it with the getYoutubeChannelId method and a
+	 *             channel name
+	 * @throws java.text.ParseException
+	 */
+
+	private static void getVideoClipIDs(String youtubeChannelId,
+			List<YoutubeMetaData> resultContainer,
+			List<YoutubeMetaData> lockedContainer) throws IOException,
+			ParseException, java.text.ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/playlistItems");
+		url.put("part", "snippet");
+		url.put("playlistId", youtubeChannelId);
+		url.put("key", properties.get("API_KEY"));
+		url.put("maxResults", "50");
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		System.out.println("response:  " + response);
+
+		JSONArray responseItems = (JSONArray) response.get("items");
+
+		for (int i = 0; i < responseItems.size(); ++i) {
+			JSONObject responseItemsEntry = (JSONObject) responseItems.get(i);
+			JSONObject responseItemsEntrySnippet = (JSONObject) responseItemsEntry
+					.get("snippet");
+			JSONObject responseItemsEntrySnippetResourceid = (JSONObject) responseItemsEntrySnippet
+					.get("resourceId");
+			String videoID = responseItemsEntrySnippetResourceid.get("videoId")
+					.toString();
+			boolean checkRegionLock = getRegionLockInfo(videoID);
+			YoutubeMetaData temp = new YoutubeMetaData();
+			if (checkRegionLock) {
+				temp.setYoutubeID(videoID);
+				JSONObject detailedResults = genericYoutubeCall(
+						"snippet, contentDetails, statistics", videoID);
+				processingDetailedResults(detailedResults, temp);
+				resultContainer.add(temp);
+			} else {
+				temp.setYoutubeID(videoID);
+				JSONObject detailedResults = genericYoutubeCall(
+						"snippet, contentDetails, statistics", videoID);
+				processingDetailedResults(detailedResults, temp);
+				lockedContainer.add(temp);
+			}
+		}
+		if (response.containsKey("nextPageToken")) {
+			String nextPageToken = response.get("nextPageToken").toString();
+			getNextPage(youtubeChannelId, nextPageToken, resultContainer,
+					lockedContainer);
+		}
+		System.out.println("List of available Videos(" + resultContainer.size()
+				+ ")");
+		System.out.println("List of locked Videos (" + lockedContainer.size()
+				+ ")");
+	}
+
+	/**
+	 * 
+	 * @param youtubeChannelId
+	 *            requires a youtube channel id
+	 * @param nextPageToken
+	 *            youtube marker that is used to navigate between search pages
+	 * @param resultContainer
+	 *            List containing all videos from a channel
+	 * @param lockedList
+	 *            containing all GEMA blocked videos from a channel
+	 * @throws IOException
+	 * @throws ParseException
+	 * 
+	 *             this is a submethod to the getVideoClipIDs(String
+	 *             youtubeChannelId){} method to retrieve more than 50 video
+	 *             results
+	 */
+
+	private static void getNextPage(String youtubeChannelId,
+			String nextPageToken, List<YoutubeMetaData> resultContainer,
+			List<YoutubeMetaData> lockedContainer) throws IOException,
+			ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/playlistItems");
+		url.put("part", "snippet");
+		url.put("playlistId", youtubeChannelId);
+		url.put("key", properties.get("API_KEY"));
+		url.put("maxResults", "50");
+		url.put("pageToken", nextPageToken);
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+
+		JSONArray responseItems = (JSONArray) response.get("items");
+
+		for (int i = 0; i < responseItems.size(); ++i) {
+			JSONObject responseItemsEntry = (JSONObject) responseItems.get(i);
+			JSONObject responseItemsEntrySnippet = (JSONObject) responseItemsEntry
+					.get("snippet");
+			JSONObject responseItemsEntrySnippetResourceid = (JSONObject) responseItemsEntrySnippet
+					.get("resourceId");
+			String videoID = responseItemsEntrySnippetResourceid.get("videoId")
+					.toString();
+			boolean checkRegionLock = getRegionLockInfo(videoID);
+			YoutubeMetaData temp = new YoutubeMetaData();
+			if (checkRegionLock) {
+				temp.setYoutubeID(videoID);
+				resultContainer.add(temp);
+			} else {
+				temp.setYoutubeID(videoID);
+				lockedContainer.add(temp);
+			}
+
+		}
+		if (response.containsKey("nextPageToken")) {
+			String newNextPageToken = response.get("nextPageToken").toString();
+			getNextPage(youtubeChannelId, newNextPageToken, resultContainer,
+					lockedContainer);
+		}
+
+	}
+
+	/**
+	 * 
 	 * @param response
 	 *            Input is an JSONObject produced from the method youtubeSearch
 	 * @param container
@@ -198,13 +411,18 @@ public class YoutubeClipsFromBandMID {
 			JSONObject responseItemsId = (JSONObject) responseItemsEntry
 					.get("id");
 			String youtubeId = responseItemsId.get("videoId").toString();
-			YoutubeMetaData temp = new YoutubeMetaData();
-			temp.setYoutubeID(youtubeId);
-			System.out.println("www.youtube.com/watch?v=" + youtubeId);
-			JSONObject detailedResults = genericYoutubeCall(
-					"snippet, contentDetails, statistics", youtubeId);
-			processingDetailedResults(detailedResults, temp);
-			container.add(temp);
+			if (getRegionLockInfo(youtubeId)) {
+				YoutubeMetaData temp = new YoutubeMetaData();
+				temp.setYoutubeID(youtubeId);
+				System.out.println("www.youtube.com/watch?v=" + youtubeId);
+				JSONObject detailedResults = genericYoutubeCall(
+						"snippet, contentDetails, statistics", youtubeId);
+				processingDetailedResults(detailedResults, temp);
+				container.add(temp);
+			} else {
+				System.out.println("The video with the id: " + youtubeId
+						+ " is not available!");
+			}
 		}
 	}
 

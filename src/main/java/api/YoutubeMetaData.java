@@ -103,4 +103,20 @@ public class YoutubeMetaData {
 		this.durationInSeconds = durationInSeconds;
 	}
 
+	public String toString() {
+		String response = "";
+
+		response = "youtubeId " + getYoutubeID().toString() + "\n"
+				+ "channelId " + getChannelID().toString() + "\n" + "title "
+				+ getTitle().toString() + "\n" + "publishedAt "
+				+ getPublishedAt().toString() + "\n" + "duration "
+				+ getDuration().toString() + "\n" + "durationInSeconds :"
+				+ getDurationInSeconds() + "\n" + "viewCount "
+				+ getViewCount().toString() + "\n" + "likeCount "
+				+ getLikeCount().toString() + "\n" + "dislikeCount "
+				+ getDislikeCount().toString() + "\n" + "commentCount "
+				+ getCommentCount().toString();
+
+		return response;
+	}
 }

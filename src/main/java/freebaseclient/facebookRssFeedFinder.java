@@ -89,9 +89,7 @@ public class facebookRssFeedFinder {
 
 	private static void getYoutubeClips(List<GenericUrl> otherWebpagesUrls)
 			throws FileNotFoundException, IOException, ParseException {
-		// freebase-API-Key == google-API-Key
 		properties.load(new FileInputStream("freebase.properties"));
-
 		List<GenericUrl> filteredList = filterUrlList(otherWebpagesUrls,
 				"http://www.youtube.com/user");
 		if (filteredList.size() > 0) {
