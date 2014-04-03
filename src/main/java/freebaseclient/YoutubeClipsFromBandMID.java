@@ -2,7 +2,10 @@ package freebaseclient;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -30,10 +33,11 @@ public class YoutubeClipsFromBandMID {
 
 	public static Properties properties = new Properties();
 
-	public static void main(String[] args) throws IOException, ParseException {
+	public static void main(String[] args) throws IOException, ParseException,
+			java.text.ParseException {
 		// Placeholder for file input MID
-		String bandMid = "/m/03y2lh";
-		String title = "Celestial Bond";
+		String bandMid = "/m/0875sv";
+		String title = "Morphogenesis";
 		// List<YoutubeMetaData> list = getVideosForTrackAndBand(bandMid,
 		// title);
 		List<YoutubeMetaData> container = new ArrayList<YoutubeMetaData>();
@@ -152,11 +156,13 @@ public class YoutubeClipsFromBandMID {
 	 *             This method iterates over all entries it got from the common
 	 *             youtube search and tries to fill all fields for the youtube
 	 *             objects
+	 * @throws java.text.ParseException
 	 * 
 	 */
 
 	public static void processingSearchResults(JSONObject response,
-			List<YoutubeMetaData> container) throws IOException, ParseException {
+			List<YoutubeMetaData> container) throws IOException,
+			ParseException, java.text.ParseException {
 		JSONArray responseItems = (JSONArray) response.get("items");
 		for (int i = 0; i < responseItems.size(); i++) {
 			JSONObject responseItemsEntry = (JSONObject) responseItems.get(i);
@@ -183,10 +189,11 @@ public class YoutubeClipsFromBandMID {
 	 *            loop
 	 * 
 	 *            the method iterates over the details JSON and fills all fields
+	 * @throws java.text.ParseException
 	 */
 
 	public static void processingDetailedResults(JSONObject response,
-			YoutubeMetaData youtubeTemp) {
+			YoutubeMetaData youtubeTemp) throws java.text.ParseException {
 		JSONArray responseItems = (JSONArray) response.get("items");
 		JSONObject responseItemsEntry = (JSONObject) responseItems.get(0);
 		JSONObject responseSnippet = (JSONObject) responseItemsEntry
@@ -196,10 +203,11 @@ public class YoutubeClipsFromBandMID {
 		youtubeTemp.setChannelID(responseSnippet.get("channelId").toString());
 		youtubeTemp.setTitle(responseSnippet.get("title").toString());
 		System.out.println("title: " + responseSnippet.get("title").toString());
-		youtubeTemp.setPublishedAt(responseSnippet.get("publishedAt")
-				.toString());
-		System.out.println("publishedAt "
-				+ responseSnippet.get("publishedAt").toString());
+		String tempDate = responseSnippet.get("publishedAt").toString();
+		DateFormat formatter = new SimpleDateFormat("yyyy-mm-dd'T'HH:mm:ss");
+		Date date = formatter.parse(tempDate);
+		youtubeTemp.setPublishedAt(date);
+		System.out.println("publishedAt: " + youtubeTemp.getPublishedAt());
 		JSONObject responseContentDetails = (JSONObject) responseItemsEntry
 				.get("contentDetails");
 		youtubeTemp.setDuration(responseContentDetails.get("duration")
@@ -226,7 +234,6 @@ public class YoutubeClipsFromBandMID {
 				+ responseStatistics.get("commentCount").toString());
 		System.out.println("------------------------------");
 	}
-
 	/*
 	 * public static List<YoutubeMetaData> getVideosForTrackAndBand( String
 	 * bandMID, String trackName) {
