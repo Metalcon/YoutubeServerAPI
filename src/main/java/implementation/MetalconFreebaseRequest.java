@@ -22,6 +22,12 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.jayway.jsonpath.JsonPath;
 
+/**
+ * Implementation for Freebase request supported by Metalcon
+ * 
+ * @author Christian Schowalter
+ * 
+ */
 public class MetalconFreebaseRequest implements api.FreebaseRequest {
 
 	public static Properties properties = new Properties();
@@ -160,9 +166,61 @@ public class MetalconFreebaseRequest implements api.FreebaseRequest {
 		return request;
 	}
 
-	public FreebaseMetaData reconcileBand(String bandname) {
-		// TODO Auto-generated method stub
-		return null;
+	public FreebaseMetaData reconcileBand(String bandname) throws IOException,
+			ParseException {
+		FreebaseMetaData freebaseMetaData = new FreebaseMetaData();
+		HttpResponse httpResponse = BuildRequest(bandname).execute();
+		FreebaseMetaData response = parseResponse(httpResponse,
+				freebaseMetaData);
+		return response;
+	}
+
+	private HttpRequest BuildRequest(String bandname) throws IOException,
+			ParseException {
+		try {
+			properties.load(new FileInputStream("freebase.properties"));
+		} catch (IOException e1) {
+			System.out.println("Problem reading properties!");
+			e1.printStackTrace();
+		}
+
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/freebase/v1/reconcile");
+		url.put("name", bandname);
+		url.put("kind", "/music/artist");
+		url.put("prop", "/music/artist/genre:Heavy metal");
+		url.put("key", properties.get("API_KEY"));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+
+		return request;
+	}
+
+	private FreebaseMetaData parseResponse(HttpResponse httpResponse,
+			FreebaseMetaData result) throws ParseException, IOException {
+		JSONParser jsonParser = new JSONParser();
+		JSONObject response = (JSONObject) jsonParser.parse(httpResponse
+				.parseAsString());
+		JSONArray candidates = (JSONArray) response.get("candidate");
+		if (candidates == null) {
+			// TODO: define what happens if Freebase found nothing
+			// System.out.println("nothing found");
+			return null;
+		} else {
+			for (int j = 0; j < response.size(); j++) {
+				JSONObject responseEntry = (JSONObject) jsonParser
+						.parse(response.get(j).toString());
+
+				result.setMid(JsonPath.read(responseEntry.get(0), "$.mid")
+						.toString());
+				result.setConfidence(Double.parseDouble(JsonPath.read(
+						responseEntry.get(0), "$.confidence").toString()));
+			}
+
+			return result;
+		}
 	}
 
 	public List<FreebaseMetaData> retrieveRecordsForFreebaseBand(String mid) {

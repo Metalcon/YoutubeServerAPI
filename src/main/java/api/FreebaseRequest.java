@@ -34,8 +34,11 @@ public interface FreebaseRequest {
 	 * @param bandname
 	 * @return a concept from freebase when reconciliation was possible and null
 	 *         otherwise
+	 * @throws IOException
+	 * @throws ParseException
 	 */
-	FreebaseMetaData reconcileBand(String bandname);
+	FreebaseMetaData reconcileBand(String bandname) throws IOException,
+			ParseException;
 
 	/**
 	 * Given the freebase mid of a band this returns a list of all records as

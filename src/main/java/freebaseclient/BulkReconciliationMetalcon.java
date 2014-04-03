@@ -50,7 +50,7 @@ public class BulkReconciliationMetalcon {
 		JSONParser parser = new JSONParser();
 		List<String> bandListArray = readInputFile();
 		reconcileList(bandListArray);
-		writeToFile(outputString);
+		//writeToFile(outputString);
 	}
 
 	private static void reconcileList(List<String> bandListArray) throws IOException, ParseException {
