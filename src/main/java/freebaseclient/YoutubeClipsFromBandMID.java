@@ -40,35 +40,56 @@ public class YoutubeClipsFromBandMID {
 	public static void main(String[] args) throws IOException, ParseException,
 			java.text.ParseException {
 		// Placeholder for file input MID
-		String bandMid = "/m/0875sv";
-		String title = "Morphogenesis";
+		String bandMid = "/m/03d2h22";
+		String trackTitle = "Keelhauled";
+		String recordTitle = "Black Sails at midnight";
+		properties.load(new FileInputStream("freebase.properties"));
 		// List<YoutubeMetaData> list = getVideosForTrackAndBand(bandMid,
 		// title);
-		List<YoutubeMetaData> container = new ArrayList<YoutubeMetaData>();
-		properties.load(new FileInputStream("freebase.properties"));
 
-		JSONObject response = youtubeSongSearch(5, title, bandMid);
-		processingSearchResults(response, container);
+		List<YoutubeMetaData> trackContainer = new ArrayList<YoutubeMetaData>();
+		List<YoutubeMetaData> recordContainer = new ArrayList<YoutubeMetaData>();
+
+		JSONObject recordResponse = youtubeSongSearch(10, recordTitle, bandMid);
+		JSONObject trackResponse = youtubeSongSearch(10, trackTitle, bandMid);
+
+		processingSearchResults(trackResponse, trackContainer);
+		processingSearchResults(recordResponse, recordContainer);
+
+		int maxDuration = recordContainer.get(0).getDurationInSeconds();
+		YoutubeMetaData bestRecord = recordContainer.get(0);
+		for (int i = 1; i < recordContainer.size(); i++) {
+			if (maxDuration < recordContainer.get(i).getDurationInSeconds()) {
+				maxDuration = recordContainer.get(i).getDurationInSeconds();
+				bestRecord = recordContainer.get(i);
+			}
+		}
+
+		System.out.println("Most likely full album: ");
+		System.out.println("www.youtube.com/watch?v="
+				+ bestRecord.getYoutubeID());
+
 		System.out.println("First entry: ");
 		System.out.println("youtubeId "
-				+ container.get(0).getYoutubeID().toString());
+				+ trackContainer.get(0).getYoutubeID().toString());
 		System.out.println("channelId "
-				+ container.get(0).getChannelID().toString());
-		System.out.println("title " + container.get(0).getTitle().toString());
+				+ trackContainer.get(0).getChannelID().toString());
+		System.out.println("title "
+				+ trackContainer.get(0).getTitle().toString());
 		System.out.println("publishedAt "
-				+ container.get(0).getPublishedAt().toString());
+				+ trackContainer.get(0).getPublishedAt().toString());
 		System.out.println("duration "
-				+ container.get(0).getDuration().toString());
+				+ trackContainer.get(0).getDuration().toString());
 		System.out.println("durationInSeconds :"
-				+ container.get(0).getDurationInSeconds());
+				+ trackContainer.get(0).getDurationInSeconds());
 		System.out.println("viewCount "
-				+ container.get(0).getViewCount().toString());
+				+ trackContainer.get(0).getViewCount().toString());
 		System.out.println("likeCount "
-				+ container.get(0).getLikeCount().toString());
+				+ trackContainer.get(0).getLikeCount().toString());
 		System.out.println("dislikeCount "
-				+ container.get(0).getDislikeCount().toString());
+				+ trackContainer.get(0).getDislikeCount().toString());
 		System.out.println("commentCount "
-				+ container.get(0).getCommentCount().toString());
+				+ trackContainer.get(0).getCommentCount().toString());
 	}
 
 	/**
@@ -101,6 +122,7 @@ public class YoutubeClipsFromBandMID {
 		url.put("maxResults", maxResults);
 		url.put("q", songTitle);
 		url.put("topicId", topicID);
+		url.put("type", "video");
 		url.put("key", properties.get("API_KEY"));
 		HttpRequest request = requestFactory.buildGetRequest(url);
 		HttpResponse httpResponse = request.execute();
@@ -170,6 +192,7 @@ public class YoutubeClipsFromBandMID {
 			List<YoutubeMetaData> container) throws IOException,
 			ParseException, java.text.ParseException {
 		JSONArray responseItems = (JSONArray) response.get("items");
+		System.out.println(responseItems);
 		for (int i = 0; i < responseItems.size(); i++) {
 			JSONObject responseItemsEntry = (JSONObject) responseItems.get(i);
 			JSONObject responseItemsId = (JSONObject) responseItemsEntry
@@ -246,16 +269,5 @@ public class YoutubeClipsFromBandMID {
 				+ responseStatistics.get("commentCount").toString());
 		System.out.println("------------------------------");
 	}
-	/*
-	 * public static List<YoutubeMetaData> getVideosForTrackAndBand( String
-	 * bandMID, String trackName) {
-	 * 
-	 * JSON = apicall; ArrayList<YoutubeMetaData> response = new
-	 * ArrayList<YoutubeMetaData>(); for (entrz in json){ YoutubeMetaData tmp =
-	 * new YoutubeMetaData(); tmp.setChannelID(.YoutubeClipsFromBandMID...);
-	 * response.add(tmp); } return response;
-	 * 
-	 * return null; }
-	 */
 
 }
