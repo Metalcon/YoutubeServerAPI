@@ -40,9 +40,9 @@ public class YoutubeClipsFromBandMID {
 	public static void main(String[] args) throws IOException, ParseException,
 			java.text.ParseException {
 		// Placeholder for file input MID
-		String bandMid = "/m/04rcr";
-		String trackTitle = "One";
-		String recordTitle = "Black Album";
+		String bandMid = "/m/02gpxc";
+		String trackTitle = "När jättar marschera";
+		String recordTitle = "Blodsvept";
 		String youtubeChannelName = "inlegendband";
 		properties.load(new FileInputStream("freebase.properties"));
 
@@ -50,16 +50,17 @@ public class YoutubeClipsFromBandMID {
 		List<YoutubeMetaData> recordContainer = new ArrayList<YoutubeMetaData>();
 		List<YoutubeMetaData> channelResultContainer = new ArrayList<YoutubeMetaData>();
 		List<YoutubeMetaData> channelLockedContainer = new ArrayList<YoutubeMetaData>();
+		List<YoutubeMetaData> searchTermContainer = new ArrayList<YoutubeMetaData>();
+		List<YoutubeMetaData> searchTopicContainer = new ArrayList<YoutubeMetaData>();
 
 		String youtubeChannelID = getYoutubeChannelId(youtubeChannelName);
 		getVideoClipIDs(youtubeChannelID, channelResultContainer,
 				channelLockedContainer);
 
-		JSONObject recordResponse = youtubeSongSearch(5, recordTitle, bandMid);
-		JSONObject trackResponse = youtubeSongSearch(5, trackTitle, bandMid);
-
-		processingSearchResults(trackResponse, trackContainer);
-		processingSearchResults(recordResponse, recordContainer);
+		youtubeSongSearch(5, recordTitle, bandMid, recordContainer);
+		youtubeSongSearch(5, trackTitle, bandMid, trackContainer);
+		youtubeSongSearch(5, trackTitle, searchTermContainer);
+		youtubeSongSearch(5, bandMid, searchTopicContainer);
 
 		int maxDuration = recordContainer.get(0).getDurationInSeconds();
 		YoutubeMetaData bestRecord = recordContainer.get(0);
@@ -75,12 +76,33 @@ public class YoutubeClipsFromBandMID {
 				+ bestRecord.getYoutubeID());
 
 		System.out.println("--------------------------------");
-		System.out.println("First entry: ");
+		System.out.println("First search entry. Query: (trackTitle=\""
+				+ trackTitle + "\", bandMid=\"" + bandMid + "\") ");
 		System.out.println(trackContainer.get(0).toString());
 		System.out.println("--------------------------------");
+		System.out.println();
 
-		System.out.println("First Channel video entry: ");
+		System.out.println("---------------------------------");
+		System.out
+				.println("First Channel video entry. Query: (youtubeChannelName=\""
+						+ youtubeChannelName + "\")");
 		System.out.println(channelResultContainer.get(0).toString());
+		System.out.println("----------------------------------");
+		System.out.println();
+
+		System.out.println("---------------------------------");
+		System.out.println("First Search Term entry. Query: (trackTitle=\""
+				+ trackTitle + "\")");
+		System.out.println(searchTermContainer.get(0).toString());
+		System.out.println("----------------------------------");
+		System.out.println();
+
+		System.out.println("-----------------------------------");
+		System.out.println("First Search Topic entry. Query:  (bandMid=\""
+				+ bandMid + "\")");
+		System.out.println(searchTopicContainer.get(0).toString());
+		System.out.println("-----------------------------------");
+		System.out.println();
 	}
 
 	/**
@@ -98,10 +120,12 @@ public class YoutubeClipsFromBandMID {
 	 *             This method is a generic youtube search. It needs a band
 	 *             topic ID from freebase and retrieves a list of songs to a
 	 *             query of a songTitle from that band
+	 * @throws java.text.ParseException
 	 */
 
-	public static JSONObject youtubeSongSearch(int maxResults, String query,
-			String topicID) throws IOException, ParseException {
+	public static void youtubeSongSearch(int maxResults, String query,
+			String topicID, List<YoutubeMetaData> container)
+			throws IOException, ParseException, java.text.ParseException {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
@@ -119,7 +143,50 @@ public class YoutubeClipsFromBandMID {
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
 				.parseAsString());
-		return response;
+		processingSearchResults(response, container);
+	}
+
+	/**
+	 * 
+	 * @param maxResults
+	 *            defines how many results should be requested
+	 * @param query
+	 *            defines the search query. Takes either a common search term
+	 *            like a normal search in youtube or it can take a freebase id
+	 * @return returns a JSON from youtube containing all video ids from the
+	 *         requested search term
+	 * @throws IOException
+	 * @throws ParseException
+	 * 
+	 *             This method is a common youtube search request and requires a
+	 *             search term or a freebase id
+	 * @throws java.text.ParseException
+	 */
+
+	public static void youtubeSongSearch(int maxResults, String query,
+			List<YoutubeMetaData> container) throws IOException,
+			ParseException, java.text.ParseException {
+		HttpTransport httpTransport = new NetHttpTransport();
+		HttpRequestFactory requestFactory = httpTransport
+				.createRequestFactory();
+
+		GenericUrl url = new GenericUrl(
+				"https://www.googleapis.com/youtube/v3/search");
+		url.put("part", "id");
+		url.put("maxResults", maxResults);
+		if (query.startsWith("/m/")) {
+			url.put("topicId", query);
+		} else {
+			url.put("q", query);
+		}
+		url.put("type", "video");
+		url.put("key", properties.get("API_KEY"));
+		HttpRequest request = requestFactory.buildGetRequest(url);
+		HttpResponse httpResponse = request.execute();
+		JSONParser parser = new JSONParser();
+		JSONObject response = (JSONObject) parser.parse(httpResponse
+				.parseAsString());
+		processingSearchResults(response, container);
 	}
 
 	/**
