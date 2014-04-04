@@ -57,15 +57,10 @@ public class YoutubeClipsFromBandMID {
 		getVideoClipIDs(youtubeChannelID, channelResultContainer,
 				channelLockedContainer);
 
-		JSONObject recordResponse = youtubeSongSearch(5, recordTitle, bandMid);
-		JSONObject trackResponse = youtubeSongSearch(5, trackTitle, bandMid);
-		JSONObject searchTermResponse = youtubeSongSearch(5, trackTitle);
-		JSONObject searchTopicResponse = youtubeSongSearch(5, bandMid);
-
-		processingSearchResults(trackResponse, trackContainer);
-		processingSearchResults(recordResponse, recordContainer);
-		processingSearchResults(searchTermResponse, searchTermContainer);
-		processingSearchResults(searchTopicResponse, searchTopicContainer);
+		youtubeSongSearch(5, recordTitle, bandMid, recordContainer);
+		youtubeSongSearch(5, trackTitle, bandMid, trackContainer);
+		youtubeSongSearch(5, trackTitle, searchTermContainer);
+		youtubeSongSearch(5, bandMid, searchTopicContainer);
 
 		int maxDuration = recordContainer.get(0).getDurationInSeconds();
 		YoutubeMetaData bestRecord = recordContainer.get(0);
@@ -125,10 +120,12 @@ public class YoutubeClipsFromBandMID {
 	 *             This method is a generic youtube search. It needs a band
 	 *             topic ID from freebase and retrieves a list of songs to a
 	 *             query of a songTitle from that band
+	 * @throws java.text.ParseException
 	 */
 
-	public static JSONObject youtubeSongSearch(int maxResults, String query,
-			String topicID) throws IOException, ParseException {
+	public static void youtubeSongSearch(int maxResults, String query,
+			String topicID, List<YoutubeMetaData> container)
+			throws IOException, ParseException, java.text.ParseException {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
@@ -146,7 +143,7 @@ public class YoutubeClipsFromBandMID {
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
 				.parseAsString());
-		return response;
+		processingSearchResults(response, container);
 	}
 
 	/**
@@ -163,10 +160,12 @@ public class YoutubeClipsFromBandMID {
 	 * 
 	 *             This method is a common youtube search request and requires a
 	 *             search term or a freebase id
+	 * @throws java.text.ParseException
 	 */
 
-	public static JSONObject youtubeSongSearch(int maxResults, String query)
-			throws IOException, ParseException {
+	public static void youtubeSongSearch(int maxResults, String query,
+			List<YoutubeMetaData> container) throws IOException,
+			ParseException, java.text.ParseException {
 		HttpTransport httpTransport = new NetHttpTransport();
 		HttpRequestFactory requestFactory = httpTransport
 				.createRequestFactory();
@@ -187,7 +186,7 @@ public class YoutubeClipsFromBandMID {
 		JSONParser parser = new JSONParser();
 		JSONObject response = (JSONObject) parser.parse(httpResponse
 				.parseAsString());
-		return response;
+		processingSearchResults(response, container);
 	}
 
 	/**
