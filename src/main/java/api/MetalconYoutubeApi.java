@@ -71,8 +71,7 @@ public interface MetalconYoutubeApi {
      *            snippet, contentDetails, statistics, topicDetails
      * @param youtubeID
      *            id of the youtube clip you need more informations about
-     * @return
-     * @return returns a JSONObject from Youtube
+     * @return returns a YoutubeMetaData of the call
      * 
      *         This method can retrieve different kinds of informations to a
      *         youtube clip and is used to fill the YoutubeMetaData Objects
